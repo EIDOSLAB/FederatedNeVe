@@ -1,0 +1,3 @@
+FROM eidos-service.di.unito.it/dalmasso/federated-neve:base
+
+ENTRYPOINT ["wandb", "agent"]
