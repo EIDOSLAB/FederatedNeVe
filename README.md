@@ -3,3 +3,5 @@
 A revision of NeVe to also work with Federated Learning
 
 Work-in-progress
+
+![Algorithm-Diagram](./images/algorithm_diagram.png)
