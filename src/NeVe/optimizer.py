@@ -1,5 +1,4 @@
 import copy
-from typing import Dict, List, Union
 
 from torch import nn
 from .hook import NeVeHook
@@ -9,7 +8,7 @@ def _mse(a, b):
     return ((a - b) ** 2).mean()
 
 
-def _update_mse_metrics(current_metrics: List, new_metrics: List) -> Dict[str, Union[float, List[float]]]:
+def _update_mse_metrics(current_metrics: list, new_metrics: list) -> dict[str, float | list[float]]:
     result = {
         "model_metric": float("Inf"),
         "model_metric_avg": float("Inf"),
@@ -36,8 +35,8 @@ class NeVeOptimizer(object):
         self._model: nn.Module = model
         self._velocity_mu: float = velocity_momentum
         self._stop_threshold: float = stop_threshold
-        self._hooks: Dict[str, NeVeHook] = self._attach_hooks()
-        self._velocity_cache: List = []
+        self._hooks: dict[str, NeVeHook] = self._attach_hooks()
+        self._velocity_cache: list = []
         self._set_active(False)
 
     def __enter__(self):
@@ -51,7 +50,7 @@ class NeVeOptimizer(object):
         for h in self._hooks:
             self._hooks[h].set_active(active)
 
-    def step(self, init_step: bool = False) -> Dict[str, Dict | bool]:
+    def step(self, init_step: bool = False) -> dict[str, dict | bool]:
         if init_step:
             for k in self._hooks:
                 self._hooks[k].reset()
@@ -91,7 +90,7 @@ class NeVeOptimizer(object):
             data["continue_training"] = False
         return data
 
-    def _attach_hooks(self) -> Dict[str, NeVeHook]:
+    def _attach_hooks(self) -> dict[str, NeVeHook]:
         hooks = {}
         for n, m in self._model.named_modules():
             if isinstance(m, (nn.Conv2d, nn.BatchNorm2d, nn.Linear)):

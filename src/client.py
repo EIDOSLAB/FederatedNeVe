@@ -11,7 +11,8 @@ def main(num_clients: int = 1, current_client: int = 0):
     # TODO: WHEN RANDOM_DATA GENERATION IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
     fl.client.start_numpy_client(server_address="127.0.0.1:8080",
                                  client=CifarClient(train_loaders[current_client], test_loader,
-                                                    aux_loader=val_loaders[current_client]))
+                                                    aux_loader=val_loaders[current_client],
+                                                    client_id=current_client))
 
 
 if __name__ == "__main__":
