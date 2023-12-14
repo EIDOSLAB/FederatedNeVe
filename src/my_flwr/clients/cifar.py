@@ -28,9 +28,8 @@ class CifarClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.set_parameters(parameters)
         # Get the velocity value before the training step (velocity at time t-1)
-        self.neve.set_active(True)
-        _ = self.test(self.aux_loader)
-        self.neve.set_active(False)
+        with self.neve:
+            _ = self.test(self.aux_loader)
         # TODO: init_step=True should be done only the really first time we evaluate the velocity
         _ = self.neve.step(init_step=True)
         # TODO: SAVE NEVE CURRENT_ACTIVATIONS INTO FILE
@@ -42,9 +41,8 @@ class CifarClient(fl.client.NumPyClient):
         self.set_parameters(parameters)
         # TODO: READ NEVE CURRENT_ACTIVATIONS FROM FILE
         # Get the velocity value after the training step (velocity at time t)
-        self.neve.set_active(True)
-        self.test(self.aux_loader)
-        self.neve.set_active(False)
+        with self.neve:
+            self.test(self.aux_loader)
         velocity_data = self.neve.step()
         print("Velocity data:", velocity_data["neve"])
         # Validate the model on the testset
@@ -57,8 +55,8 @@ class CifarClient(fl.client.NumPyClient):
         correct, total, total_loss = 0, 0, 0.0
         optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         for _ in range(epochs):
-            for images, labels in dataloader:
-                images, labels = images.to(self.DEVICE), labels.to(self.DEVICE)
+            for data in dataloader:
+                images, labels = data[0].to(self.DEVICE), data[1].to(self.DEVICE)
                 optimizer.zero_grad()
                 outputs = self.model(images)
                 loss = criterion(outputs, labels)

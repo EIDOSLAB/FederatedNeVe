@@ -44,8 +44,8 @@ def get_cifar_10(path: str, transform=None) -> tuple[Dataset, Dataset]:
     """Load CIFAR-10 (training and test set)."""
     if transform is None:
         transform = DEFAULT_CIFAR_DATA["cifar10"]["transforms"]
-    train_set = CIFAR10(path, train=True, download=True, transform=transform)
-    test_set = CIFAR10(path, train=False, download=True, transform=transform)
+    train_set = CIFAR10(path, train=True, download=True, transform=transform[0])
+    test_set = CIFAR10(path, train=False, download=True, transform=transform[1])
     return train_set, test_set
 
 
@@ -53,6 +53,6 @@ def get_cifar_100(path: str, transform=None) -> tuple[Dataset, Dataset]:
     """Load CIFAR-100 (training and test set)."""
     if transform is None:
         transform = DEFAULT_CIFAR_DATA["cifar100"]["transforms"]
-    train_set = CIFAR100(path, train=True, download=True, transform=transform)
-    test_set = CIFAR100(path, train=False, download=True, transform=transform)
+    train_set = CIFAR100(path, train=True, download=True, transform=transform[0])
+    test_set = CIFAR100(path, train=False, download=True, transform=transform[1])
     return train_set, test_set

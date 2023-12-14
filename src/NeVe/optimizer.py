@@ -38,9 +38,16 @@ class NeVeOptimizer(object):
         self._stop_threshold: float = stop_threshold
         self._hooks: Dict[str, NeVeHook] = self._attach_hooks()
         self._velocity_cache: List = []
-        self.set_active(False)
+        self._set_active(False)
 
-    def set_active(self, active: bool):
+    def __enter__(self):
+        self._set_active(True)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._set_active(False)
+
+    def _set_active(self, active: bool):
         for h in self._hooks:
             self._hooks[h].set_active(active)
 
