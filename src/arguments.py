@@ -3,7 +3,7 @@ import sys
 
 
 def _get_default_arguments(parser):
-    parser.add_argument("--seed", type=int, default=1,
+    parser.add_argument("--seed", type=int, default=0,
                         help="Reproducibility seed.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
@@ -12,13 +12,16 @@ def _get_default_arguments(parser):
     parser.add_argument("--dataset-name", type=str, default="cifar10",
                         choices=["cifar10", "cifar100"],
                         help="Dataset folder name.")
+    # Wandb Logging
+    parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")
+    parser.add_argument("--wandb-run-name", type=str, default=None)
 
 
 def _get_federated_arguments(parser):
     parser.add_argument("--server-address", type=str, default="127.0.0.1:8080",
                         help="Server address:port.")
     parser.add_argument("--num-clients", type=int, default=2,
-                        help="Number clients in the federated learning.")
+                        help="Number of clients in the federated learning.")
 
 
 def _get_client_arguments(parser):

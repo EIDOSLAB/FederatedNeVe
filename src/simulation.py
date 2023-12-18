@@ -3,9 +3,10 @@ import torch
 
 from arguments import get_args
 from dataloaders import get_dataset, split_data
+from models.test import Net
 from my_flwr.clients import CifarClient
 from my_flwr.strategies import weighted_average_fit, weighted_average_eval
-from models.test import Net
+from utils import set_seeds
 
 train_loaders, val_loaders, test_loader = None, None, None
 
@@ -23,6 +24,8 @@ def client_fn(cid: str):
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global train_loaders, val_loaders, test_loader
+    # Init seeds
+    set_seeds(args.seed)
     # Initialize global model and data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
     train_loaders, val_loaders, test_loader = split_data(train, test, num_clients=args.num_clients)

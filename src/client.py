@@ -3,9 +3,12 @@ import flwr as fl
 from arguments import get_args
 from dataloaders import get_dataset, split_data
 from my_flwr.clients import CifarClient
+from utils import set_seeds
 
 
 def main(args):
+    # Init seeds
+    set_seeds(args.seed)
     # Load data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
     train_loaders, val_loaders, test_loader = split_data(train, test, num_clients=args.num_clients)

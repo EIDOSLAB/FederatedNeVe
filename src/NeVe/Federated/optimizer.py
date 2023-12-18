@@ -17,7 +17,8 @@ class FederatedNeVeOptimizer(NeVeOptimizer):
         assert self._activations_save_path
         os.makedirs(self._activations_save_path, exist_ok=True)
         for h in self._hooks:
-            activations = torch.empty((len(self._hooks[h]._previous_activations), self._hooks[h]._previous_activations[0].shape[0]))
+            activations = torch.empty(
+                (len(self._hooks[h]._previous_activations), self._hooks[h]._previous_activations[0].shape[0]))
             for index, activation in enumerate(self._hooks[h]._previous_activations):
                 activations[index] = activation
             torch.save(activations, os.path.join(self._activations_save_path, str(self._client_id) + "_" + h + ".pt"))
@@ -30,4 +31,3 @@ class FederatedNeVeOptimizer(NeVeOptimizer):
             if os.path.exists(path):
                 activations = torch.load(path).to(device)
                 self._hooks[h]._previous_activations = activations
-
