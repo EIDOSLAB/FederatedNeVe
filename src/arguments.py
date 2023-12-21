@@ -2,9 +2,20 @@ import argparse
 import sys
 
 
+def int2bool(i):
+    i = int(i)
+    assert i == 0 or i == 1
+    return i == 1
+
+
 def _get_default_arguments(parser):
     parser.add_argument("--seed", type=int, default=0,
                         help="Reproducibility seed.")
+    parser.add_argument("--amp", type=int2bool, choices=[0, 1], default=True,
+                        help="If True use torch.cuda.amp.")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cuda",
+                        help="Device type.")
+
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
     parser.add_argument("--dataset-root", type=str, default="../datasets",
@@ -12,6 +23,9 @@ def _get_default_arguments(parser):
     parser.add_argument("--dataset-name", type=str, default="cifar10",
                         choices=["cifar10", "cifar100"],
                         help="Dataset folder name.")
+    # NeVe
+    parser.add_argument("--use-neve", type=int2bool, choices=[0, 1], default=True,
+                        help="If True use NeVe scheduler. Otherwise use MultiStepLR.")
     # Wandb Logging
     parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")
     parser.add_argument("--wandb-run-name", type=str, default=None)

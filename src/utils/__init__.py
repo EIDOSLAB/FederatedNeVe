@@ -3,6 +3,11 @@ import random
 
 import numpy as np
 import torch
+from torch import nn
+from torch.optim import Adam, SGD
+from torch.optim.lr_scheduler import MultiStepLR
+
+from NeVe import NeVeOptimizer
 
 
 def set_seeds(seed):
@@ -14,3 +19,23 @@ def set_seeds(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.manual_seed(seed)
+
+
+def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 0.1, weight_decay: float = 4e-5,
+                  momentum: float = 0.9) -> torch.optim.Optimizer:
+    print(f"Initialize optimizer: {opt_name}")
+    match (opt_name.lower()):
+        case "sgd":
+            optim = SGD(model.parameters(), lr=starting_lr, weight_decay=weight_decay, momentum=momentum)
+        case "adam":
+            optim = Adam(model.parameters(), lr=starting_lr, weight_decay=weight_decay)
+        case _:
+            raise Exception(f"Optimizer '{opt_name}' not defined.")
+    return optim
+
+
+def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer,use_neve: bool = True):
+    if use_neve:
+        return NeVeOptimizer(model)
+    else:
+        return MultiStepLR(optimizer, milestones=[100, 150])
