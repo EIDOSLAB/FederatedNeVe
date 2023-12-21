@@ -9,15 +9,19 @@ def int2bool(i):
 
 
 def _get_default_arguments(parser):
+    # General
     parser.add_argument("--seed", type=int, default=0,
                         help="Reproducibility seed.")
     parser.add_argument("--amp", type=int2bool, choices=[0, 1], default=True,
                         help="If True use torch.cuda.amp.")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cuda",
                         help="Device type.")
-
+    parser.add_argument("--batch-size", type=int, default=32,
+                        help="Batch size, an higher value requires more memory.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
+
+    # Dataset
     parser.add_argument("--dataset-root", type=str, default="../datasets",
                         help="Dataset root folder.")
     parser.add_argument("--dataset-name", type=str, default="cifar10",
@@ -26,7 +30,7 @@ def _get_default_arguments(parser):
     # NeVe
     parser.add_argument("--use-neve", type=int2bool, choices=[0, 1], default=True,
                         help="If True use NeVe scheduler. Otherwise use MultiStepLR.")
-    # Wandb Logging
+    # Wandb
     parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")
     parser.add_argument("--wandb-run-name", type=str, default=None)
 

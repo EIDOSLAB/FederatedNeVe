@@ -34,7 +34,7 @@ def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 
     return optim
 
 
-def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer,use_neve: bool = True):
+def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True):
     if use_neve:
         return NeVeOptimizer(model)
     else:

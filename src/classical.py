@@ -1,8 +1,8 @@
 import torch
-import wandb
 
+import wandb
 from arguments import get_args
-from dataloaders import get_dataset, split_data
+from dataloaders import get_dataset, prepare_data
 from models import get_model
 from utils import set_seeds, get_optimizer, get_scheduler
 from utils.trainer import train_epoch
@@ -13,7 +13,8 @@ def main(args):
     set_seeds(args.seed)
     # Load Data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
-    train_loaders, val_loaders, test_loader = split_data(train, test, num_clients=1)
+    train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=1, seed=args.seed,
+                                                           batch_size=args.batch_size)
     train_loader, val_loader = train_loaders[0], val_loaders[0]
     data_loaders = {
         "train": train_loader,

@@ -2,8 +2,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 
 
-def split_data(train_set: Dataset, test_set: Dataset, val_percentage: int = 10,
-               num_clients: int = 1, seed: int = 42, batch_size: int = 32):
+def prepare_data(train_set: Dataset, test_set: Dataset, val_percentage: int = 10,
+                 num_clients: int = 1, seed: int = 42, batch_size: int = 32):
     # Split training set into `num_clients` partitions to simulate different local datasets
     partition_size = len(train_set) // num_clients
     lengths = [partition_size] * num_clients

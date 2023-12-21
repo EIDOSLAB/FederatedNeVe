@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torchvision
 
-from models.cifar_resnets import get_resnet_model
+from .cifar_resnets import get_resnet_model
 
 
 def _get_imagenet_resnet(model_name: str = "resnet18", num_classes: int = 1000, weights=None) -> nn.Module:
-    match(model_name.lower()):
+    match (model_name.lower()):
         case "resnet18":
             model = torchvision.models.resnet18(weights=weights)
         case "resnet18":
@@ -17,13 +17,13 @@ def _get_imagenet_resnet(model_name: str = "resnet18", num_classes: int = 1000, 
 
 
 def get_model(model_name: str = "resnet32", dataset="cifar10", weights=None, device: str = "cpu") -> nn.Module:
-    match(dataset.lower()):
+    match (dataset.lower()):
         case "cifar10":
             model = get_resnet_model(model_name, num_classes=10)
         case "cifar100":
             model = get_resnet_model(model_name, num_classes=100)
         case "imagenet100":
-            model = _get_imagenet_resnet(model_name=model_name, weights=weights)
+            model = _get_imagenet_resnet(model_name=model_name, weights=weights, num_classes=100)
         case _:
             raise Exception(f"Dataset '{dataset}' does not exist.")
     model.to(device)
