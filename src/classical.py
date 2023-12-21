@@ -34,6 +34,9 @@ def main(args):
     for epoch in range(0, args.epochs):
         logs = train_epoch(model, data_loaders, optimizer, scheduler, scaler, args.device, args.amp, epoch=epoch)
         print(f"Epoch [{epoch + 1}]/[{args.epochs}]:\n{logs}\n")
+        # Log on wandb project
+        wandb.log(logs)
+
     # Save model...
 
     # End wandb run
