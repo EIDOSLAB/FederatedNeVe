@@ -2,13 +2,13 @@ import flwr as fl
 import torch
 
 from arguments import get_args
-from dataloaders import get_dataset, split_data
-from models.test import Net
-from my_flwr.clients import CifarClient
+from dataloaders import get_dataset, prepare_data
+from my_flwr.clients import NeVeCifarClient
 from my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from utils import set_seeds
 
 train_loaders, val_loaders, test_loader = None, None, None
+neve_epsilon, neve_momentum = 1e-3, 0.5
 
 
 def client_fn(cid: str):
@@ -18,20 +18,23 @@ def client_fn(cid: str):
     train_loader = train_loaders[int(cid) % len(train_loaders)]
     # TODO: WHEN AUX_LOADER IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
     valid_loader = val_loaders[int(cid) % len(val_loaders)]
-    return CifarClient(train_loader, test_loader, aux_loader=valid_loader)
+    return NeVeCifarClient(train_loader, test_loader, aux_loader=valid_loader,
+                           neve_epsilon=neve_epsilon, neve_momentum=neve_momentum)
 
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global train_loaders, val_loaders, test_loader
+    global neve_epsilon, neve_momentum
     # Init seeds
     set_seeds(args.seed)
+    neve_epsilon = args.neve_epsilon
+    neve_momentum = args.neve_momentum
     # Initialize global model and data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
-    train_loaders, val_loaders, test_loader = split_data(train, test, num_clients=args.num_clients)
+    train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=args.num_clients)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("Performing training on:", device)
-    net = Net().to(device)
 
     client_resources = None
     if "cuda" in device.type:

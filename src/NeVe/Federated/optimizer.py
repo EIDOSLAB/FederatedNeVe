@@ -7,9 +7,9 @@ from .. import NeVeOptimizer
 
 
 class FederatedNeVeOptimizer(NeVeOptimizer):
-    def __init__(self, model: nn.Module, velocity_momentum: float = 0.0, stop_threshold: float = 0.001,
+    def __init__(self, model: nn.Module, velocity_momentum: float = 0.5, stop_threshold: float = 0.001,
                  activations_save_path: str = "../activations/", client_id: int = 0):
-        super().__init__(model, velocity_momentum, stop_threshold)
+        super().__init__(model, velocity_momentum=velocity_momentum, stop_threshold=stop_threshold)
         self._activations_save_path = activations_save_path
         self._client_id = client_id
 
@@ -24,7 +24,6 @@ class FederatedNeVeOptimizer(NeVeOptimizer):
             torch.save(activations, os.path.join(self._activations_save_path, str(self._client_id) + "_" + h + ".pt"))
 
     def load_activations(self, device):
-        # TODO: MOVE THEM IN THE CORRECT DEVICE
         assert self._activations_save_path and os.path.exists(self._activations_save_path)
         for h in self._hooks:
             path = os.path.join(self._activations_save_path, str(self._client_id) + "_" + h + ".pt")

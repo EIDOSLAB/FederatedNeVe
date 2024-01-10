@@ -1,1 +1,1 @@
-from .cifar import CifarClient
+from .cifar import NeVeCifarClient

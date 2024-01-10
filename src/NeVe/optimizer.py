@@ -32,7 +32,7 @@ def _update_mse_metrics(current_metrics: list, new_metrics: list) -> dict[str, f
 
 
 class NeVeOptimizer(object):
-    def __init__(self, model: nn.Module, velocity_momentum: float = 0.0, stop_threshold: float = 0.001):
+    def __init__(self, model: nn.Module, velocity_momentum: float = 0.5, stop_threshold: float = 0.001):
         self._model: nn.Module = model
         self._velocity_mu: float = velocity_momentum
         self._stop_threshold: float = stop_threshold

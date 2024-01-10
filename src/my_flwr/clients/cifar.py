@@ -8,15 +8,17 @@ from NeVe.Federated import FederatedNeVeOptimizer
 from models.test import Net
 
 
-class CifarClient(fl.client.NumPyClient):
-    def __init__(self, train_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader, client_id: int = 0):
+class NeVeCifarClient(fl.client.NumPyClient):
+    def __init__(self, train_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader, client_id: int = 0,
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = Net().to(self.device)
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.aux_loader = aux_loader
         self.client_id = client_id
-        self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=0.5, client_id=client_id)
+        self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
+                                           client_id=client_id)
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]

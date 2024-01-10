@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+from NeVe.arguments import add_neve_arguments
+
 
 def int2bool(i):
     i = int(i)
@@ -28,8 +30,8 @@ def _get_default_arguments(parser):
                         choices=["cifar10", "cifar100"],
                         help="Dataset folder name.")
     # NeVe
-    parser.add_argument("--use-neve", type=int2bool, choices=[0, 1], default=True,
-                        help="If True use NeVe scheduler. Otherwise use MultiStepLR.")
+    parser = add_neve_arguments(parser)
+
     # Wandb
     parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")
     parser.add_argument("--wandb-run-name", type=str, default=None)
