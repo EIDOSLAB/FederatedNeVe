@@ -21,7 +21,7 @@ def set_seeds(seed):
     torch.manual_seed(seed)
 
 
-def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 0.1, weight_decay: float = 4e-5,
+def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 0.1, weight_decay: float = 5e-4,
                   momentum: float = 0.9) -> torch.optim.Optimizer:
     print(f"Initialize optimizer: {opt_name}")
     match (opt_name.lower()):
