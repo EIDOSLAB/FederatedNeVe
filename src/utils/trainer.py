@@ -31,7 +31,7 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
             _ = run(model, data_loaders["aux"], None, grad_scaler, device, amp, epoch, "Aux")
         epoch_logs["neve"] = scheduler.step()
 
-    epoch_logs["lr"] = {{j: group["lr"]} for j, group in enumerate(optimizer.param_groups)}
+    epoch_logs["lr"] = optimizer.param_groups[0]["lr"]
     return epoch_logs
 
 
