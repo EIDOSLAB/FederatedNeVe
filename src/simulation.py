@@ -1,6 +1,17 @@
 import flwr as fl
 import torch
 
+# ----- ----- ----- ----- -----
+# TODO: FIX SRC IMPORTS IN A BETTER WAY
+import sys
+from pathlib import Path
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+# ----- ----- ----- ----- -----
+
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
 from src.my_flwr.clients import NeVeCifarClient
@@ -32,8 +43,9 @@ def main(args):
     neve_momentum = args.neve_momentum
     # Initialize global model and data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
-    train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=args.num_clients)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=args.num_clients,
+                                                           seed=args.seed, batch_size=args.batch_size)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Performing training on:", device)
 
     client_resources = None

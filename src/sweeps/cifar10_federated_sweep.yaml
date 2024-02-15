@@ -3,8 +3,8 @@
 # dove sweeps_demo è il nome del progetto
 # config.yaml è questo config
 
-program: classical.py
-name: "cifar10 test"
+program: simulation.py
+name: "cifar10 federated test 1 client"
 command:
   - ${env}
   - python3
@@ -28,3 +28,5 @@ parameters:
     values: [ "cifar10" ]
   use-neve:
     values: [ 0 ]
+  num-clients:
+    values: [ 1, 2, 5 ]
