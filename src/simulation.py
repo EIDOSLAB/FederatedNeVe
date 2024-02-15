@@ -6,6 +6,8 @@ import torch
 import sys
 from pathlib import Path
 
+import wandb
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent
 if str(ROOT) not in sys.path:
@@ -52,6 +54,9 @@ def main(args):
     if "cuda" in device.type:
         client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
 
+    # Init wandb project
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
+
     # Launch the simulation
     hist = fl.simulation.start_simulation(
         client_fn=client_fn,  # A function to run a _virtual_ client when required
@@ -61,6 +66,10 @@ def main(args):
                                            evaluate_metrics_aggregation_fn=weighted_average_eval),  # A Flower strategy
         client_resources=client_resources
     )
+    # Save model...
+
+    # End wandb run
+    wandb.run.finish()
 
 
 if __name__ == "__main__":
