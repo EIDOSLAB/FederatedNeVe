@@ -3,7 +3,7 @@ import os.path
 import torch
 from torch import nn
 
-from .. import NeVeOptimizer
+from NeVe.optimizer import NeVeOptimizer
 
 
 class FederatedNeVeOptimizer(NeVeOptimizer):

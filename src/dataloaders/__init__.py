@@ -1,5 +1,5 @@
-from .cifar import get_cifar_10, get_cifar_100
-from .utils import prepare_data
+from dataloaders.cifar import get_cifar_10, get_cifar_100
+from dataloaders.utils import prepare_data
 
 
 def get_dataset(ds_root: str, ds_name: str):

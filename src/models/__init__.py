@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torchvision
 
-from .cifar_resnets import get_resnet_model
+from models.cifar_resnets import get_resnet_model
 
 
 def _get_imagenet_resnet(model_name: str = "resnet18", num_classes: int = 1000, weights=None) -> nn.Module:

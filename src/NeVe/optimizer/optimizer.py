@@ -1,8 +1,7 @@
 import copy
 
+from NeVe.utils.hook import NeVeHook
 from torch import nn
-
-from .hook import NeVeHook
 
 
 def _mse(a, b):
@@ -19,7 +18,7 @@ def _update_mse_metrics(current_metrics: list, new_metrics: list) -> dict[str, f
 
     # Update velocities if vector 'new_velocities' is not null
     if new_metrics is not None:
-        result["model_metric"] = sum([sum(abs(vels)) for vels in new_metrics])
+        result["model_metric"] = sum([sum(abs(velocities)) for velocities in new_metrics])
         result["model_metric_avg"] = result["model_metric"] / sum([len(vals) for vals in new_metrics])
 
     if not (current_metrics is None or new_metrics is None

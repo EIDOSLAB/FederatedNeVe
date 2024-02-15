@@ -4,7 +4,7 @@ import flwr as fl
 import torch
 from torch.utils.data import DataLoader
 
-from NeVe.Federated import FederatedNeVeOptimizer
+from NeVe.federated import FederatedNeVeOptimizer
 from models.test import Net
 
 

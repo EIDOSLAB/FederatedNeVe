@@ -1,1 +1,1 @@
-from .test import weighted_average_fit, weighted_average_eval
+from my_flwr.strategies.test import weighted_average_fit, weighted_average_eval

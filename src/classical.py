@@ -1,11 +1,11 @@
 import torch
 
 import wandb
-from arguments import get_args
-from dataloaders import get_dataset, prepare_data
-from models import get_model
-from utils import set_seeds, get_optimizer, get_scheduler
-from utils.trainer import train_epoch
+from src.arguments import get_args
+from src.dataloaders import get_dataset, prepare_data
+from src.models import get_model
+from src.utils import set_seeds, get_optimizer, get_scheduler
+from src.utils.trainer import train_epoch
 
 
 def main(args):

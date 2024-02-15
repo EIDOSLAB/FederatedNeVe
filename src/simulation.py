@@ -1,11 +1,11 @@
 import flwr as fl
 import torch
 
-from arguments import get_args
-from dataloaders import get_dataset, prepare_data
-from my_flwr.clients import NeVeCifarClient
-from my_flwr.strategies import weighted_average_fit, weighted_average_eval
-from utils import set_seeds
+from src.arguments import get_args
+from src.dataloaders import get_dataset, prepare_data
+from src.my_flwr.clients import NeVeCifarClient
+from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
+from src.utils import set_seeds
 
 train_loaders, val_loaders, test_loader = None, None, None
 neve_epsilon, neve_momentum = 1e-3, 0.5

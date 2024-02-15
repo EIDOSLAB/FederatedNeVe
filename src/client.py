@@ -1,9 +1,9 @@
 import flwr as fl
 
-from arguments import get_args
-from dataloaders import get_dataset, prepare_data
-from my_flwr.clients import NeVeCifarClient
-from utils import set_seeds
+from src.arguments import get_args
+from src.dataloaders import get_dataset, prepare_data
+from src.my_flwr.clients import NeVeCifarClient
+from src.utils import set_seeds
 
 
 def main(args):
