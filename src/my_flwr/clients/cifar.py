@@ -18,14 +18,17 @@ class NeVeCifarClient(fl.client.NumPyClient):
         self.aux_loader = aux_loader
         self.client_id = client_id
         self.neve = None
+        print("Client ID:", self.client_id, "entered __init__")
         if use_neve:
             self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
                                                client_id=client_id)
 
     def get_parameters(self, config):
+        print("Client ID:", self.client_id, "entered get_parameters")
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
 
     def set_parameters(self, parameters):
+        print("Client ID:", self.client_id, "entered set_parameters")
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         self.model.load_state_dict(state_dict, strict=True)
@@ -47,6 +50,7 @@ class NeVeCifarClient(fl.client.NumPyClient):
                                                                         "accuracy": float(accuracy)}
 
     def evaluate(self, parameters, config):
+        print("Client ID:", self.client_id, "entered evaluate")
         self.set_parameters(parameters)
         if self.neve:
             # load neve's activations
@@ -58,10 +62,12 @@ class NeVeCifarClient(fl.client.NumPyClient):
             print("Velocity data:", velocity_data["neve"])
         # Validate the model on the test-set
         loss, accuracy = self.test(self.test_loader)
+        print("Client ID:", self.client_id, "exit evaluate")
         return float(loss), len(self.test_loader), {"loss": float(loss), "accuracy": float(accuracy)}
 
     def train(self, dataloader, epochs):
         """Train the network on the training set."""
+        print("Client ID:", self.client_id, "entered train")
         criterion = torch.nn.CrossEntropyLoss()
         correct, total, total_loss = 0, 0, 0.0
         optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
@@ -78,10 +84,12 @@ class NeVeCifarClient(fl.client.NumPyClient):
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
         accuracy = correct / total
+        print("Client ID:", self.client_id, "exit train")
         return total_loss, accuracy
 
     def test(self, dataloader):
         """Validate the network on the entire test set."""
+        print("Client ID:", self.client_id, "entered test")
         criterion = torch.nn.CrossEntropyLoss()
         correct, total, loss = 0, 0, 0.0
         with torch.no_grad():
@@ -93,4 +101,5 @@ class NeVeCifarClient(fl.client.NumPyClient):
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
         accuracy = correct / total
+        print("Client ID:", self.client_id, "exit test")
         return loss, accuracy

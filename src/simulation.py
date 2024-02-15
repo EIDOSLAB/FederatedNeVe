@@ -31,6 +31,7 @@ def client_fn(cid: str):
     train_loader = train_loaders[int(cid) % len(train_loaders)]
     # TODO: WHEN AUX_LOADER IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
     valid_loader = val_loaders[int(cid) % len(val_loaders)]
+    print("Client ID:", cid, "entered client_fn")
     return NeVeCifarClient(train_loader, test_loader, aux_loader=valid_loader,
                            neve_epsilon=neve_epsilon, neve_momentum=neve_momentum).to_client()
 
