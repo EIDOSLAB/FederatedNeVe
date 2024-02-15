@@ -1,6 +1,18 @@
 import torch
 
 import wandb
+
+# ----- ----- ----- ----- -----
+# TODO: FIX SRC IMPORTS IN A BETTER WAY
+import sys
+from pathlib import Path
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+# ----- ----- ----- ----- -----
+
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
 from src.models import get_model
@@ -23,7 +35,7 @@ def main(args):
         "aux": None,
     }
     # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
-    model = get_model(device=args.device)
+    model = get_model(dataset=args.dataset_name, device=args.device)
     optimizer = get_optimizer(model)
     scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve)
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
