@@ -10,15 +10,17 @@ from models.test import Net
 
 class NeVeCifarClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader, client_id: int = 0,
-                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001):
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001, use_neve: bool = False):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = Net().to(self.device)
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.aux_loader = aux_loader
         self.client_id = client_id
-        self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
-                                           client_id=client_id)
+        self.neve = None
+        if use_neve:
+            self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
+                                               client_id=client_id)
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -30,26 +32,30 @@ class NeVeCifarClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
+        print("Client ID:", self.client_id, "entered fit")
         # Get the velocity value before the training step (velocity at time t-1)
         # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
-        with self.neve:
-            _ = self.test(self.aux_loader)
-        # TODO: init_step=True should be done only the really first time we evaluate the velocity
-        _ = self.neve.step(init_step=True)
-        self.neve.save_activations()
+        if self.neve:
+            with self.neve:
+                _ = self.test(self.aux_loader)
+            # TODO: init_step=True should be done only the really first time we evaluate the velocity
+            _ = self.neve.step(init_step=True)
+            self.neve.save_activations()
         loss, accuracy = self.train(self.train_loader, epochs=1)
+        print("Client ID:", self.client_id, "finished fit")
         return self.get_parameters(config={}), len(self.train_loader), {"loss": float(loss),
                                                                         "accuracy": float(accuracy)}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        # load neve's activations
-        self.neve.load_activations(self.device)
-        # Get the velocity value after the training step (velocity at time t)
-        with self.neve:
-            self.test(self.aux_loader)
-        velocity_data = self.neve.step()
-        print("Velocity data:", velocity_data["neve"])
+        if self.neve:
+            # load neve's activations
+            self.neve.load_activations(self.device)
+            # Get the velocity value after the training step (velocity at time t)
+            with self.neve:
+                self.test(self.aux_loader)
+            velocity_data = self.neve.step()
+            print("Velocity data:", velocity_data["neve"])
         # Validate the model on the test-set
         loss, accuracy = self.test(self.test_loader)
         return float(loss), len(self.test_loader), {"loss": float(loss), "accuracy": float(accuracy)}
