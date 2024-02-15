@@ -14,6 +14,8 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
     # Training phase
     if "train" in data_loaders.keys() and data_loaders["train"]:
         epoch_logs["train"] = run(model, data_loaders["train"], optimizer, grad_scaler, device, amp, epoch, "Train")
+        if not isinstance(scheduler, NeVeOptimizer):
+            scheduler.step()
 
     # Validation phase
     if "val" in data_loaders.keys() and data_loaders["val"]:
@@ -29,6 +31,7 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
             _ = run(model, data_loaders["aux"], None, grad_scaler, device, amp, epoch, "Aux")
         epoch_logs["neve"] = scheduler.step()
 
+    epoch_logs["lr"] = {{j: group["lr"]} for j, group in enumerate(optimizer.param_groups)}
     return epoch_logs
 
 

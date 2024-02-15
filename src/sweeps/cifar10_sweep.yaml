@@ -3,7 +3,7 @@
 # dove sweeps_demo è il nome del progetto
 # config.yaml è questo config
 
-program: classification.py
+program: classical.py
 name: "cifar10 test"
 command:
   - ${env}
