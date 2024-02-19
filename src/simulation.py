@@ -16,11 +16,11 @@ if str(ROOT) not in sys.path:
 
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
-from src.my_flwr.clients import CifarCustomClient
+from src.my_flwr.clients import CifarDefaultClient
 from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.utils import set_seeds
 
-train_loaders, val_loaders, test_loader = None, None, None
+dataset_name, train_loaders, val_loaders, test_loader = "", None, None, None
 neve_epsilon, neve_momentum = 1e-3, 0.5
 
 
@@ -29,23 +29,21 @@ def client_fn(cid: str):
     print("Created client with cid:", cid)
     # Load data from the client
     train_loader = train_loaders[int(cid) % len(train_loaders)]
-    # TODO: WHEN AUX_LOADER IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
     valid_loader = val_loaders[int(cid) % len(val_loaders)]
-    print("Client ID:", cid, "entered client_fn")
-    return CifarCustomClient(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
-                             use_neve=False, aux_loader=valid_loader,
-                             client_id=int(cid),
-                             neve_epsilon=neve_epsilon, neve_momentum=neve_momentum).to_client()
+    # TODO: ADD AUX LOADER
+    return CifarDefaultClient(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
+                              dataset_name=dataset_name, client_id=int(cid)).to_client()
 
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
-    global train_loaders, val_loaders, test_loader
+    global dataset_name, train_loaders, val_loaders, test_loader
     global neve_epsilon, neve_momentum
     # Init seeds
     set_seeds(args.seed)
     neve_epsilon = args.neve_epsilon
     neve_momentum = args.neve_momentum
+    dataset_name = args.dataset_name
     # Initialize global model and data
     train, test = get_dataset(args.dataset_root, args.dataset_name)
     train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=args.num_clients,

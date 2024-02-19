@@ -10,33 +10,25 @@ from utils import get_optimizer, get_scheduler
 from utils.trainer import run
 
 
-class CifarCustomClient(fl.client.NumPyClient):
+class CifarDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
-                 aux_loader: DataLoader, client_id: int = "0",
-                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001, use_neve: bool = False,
+                 dataset_name: str = "cifar10", client_id: int = "0",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.amp = amp
         self.epoch = 0
-        self.model = get_model(dataset="cifar10", device=self.device)
+        self.model = get_model(dataset=dataset_name, device=str(self.device))
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader
-        self.aux_loader = aux_loader
         self.client_id = client_id
         self.lr = lr
         self.momentum = momentum
         self.weight_decay = weight_decay
-        self.neve = None
-        self.optimizer = get_optimizer(self.model,
-                                       starting_lr=self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
-        self.scheduler = get_scheduler(self.model, self.optimizer, use_neve=use_neve)
+        self.optimizer = get_optimizer(self.model, starting_lr=self.lr,
+                                       weight_decay=self.weight_decay, momentum=self.momentum)
+        self.scheduler = get_scheduler(self.model, self.optimizer, use_neve=False)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(self.device == "cuda" and self.amp))
-        if use_neve:
-            self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
-                                               client_id=client_id)
-            self.scheduler = None
-            # TODO: also update lr value
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -48,19 +40,20 @@ class CifarCustomClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        # Get the velocity value before the training step (velocity at time t-1)
-        # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
-        if self.neve:
-            with self.neve:
-                _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
-            # TODO: init_step=True should be done only the really first time we evaluate the velocity
-            _ = self.neve.step(init_step=True)
-            self.neve.save_activations()
-        stats = run(self.model, self.train_loader, self.optimizer, self.scaler, self.device,
-                    self.amp, self.epoch, "Train")
-        loss, accuracy_1, accuracy_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+
+        # Perform one epoch of training
+        training_stats = run(self.model, self.train_loader, self.optimizer, self.scaler, self.device,
+                             self.amp, self.epoch, "Train")
+        # Unwrap training stats
+        loss = training_stats["loss"]
+        accuracy_1, accuracy_5 = training_stats["accuracy"]["top1"], training_stats["accuracy"]["top5"]
+
+        # Update scheduler
         self.epoch += 1
-        self.scheduler.step()
+        if not isinstance(self.scheduler, FederatedNeVeOptimizer):
+            self.scheduler.step()
+
+        # Return stats in a structured way
         results_data = {
             "loss": float(loss),
             "accuracy_top1": float(accuracy_1),
@@ -72,22 +65,20 @@ class CifarCustomClient(fl.client.NumPyClient):
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        if self.neve:
-            # load neve's activations
-            self.neve.load_activations(self.device)
-            # Get the velocity value after the training step (velocity at time t)
-            with self.neve:
-                _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
-            velocity_data = self.neve.step()
-            print("Velocity data:", velocity_data["neve"])
+
         # Validate the model on the validation-set
         stats = run(self.model, self.valid_loader, None, self.scaler, self.device,
                     self.amp, self.epoch, "Validation")
-        val_loss, val_acc_1, val_acc_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        val_loss = stats["loss"]
+        val_acc_1, val_acc_5 = stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+
         # Validate the model on the test-set
         stats = run(self.model, self.test_loader, None, self.scaler, self.device,
                     self.amp, self.epoch, "Test")
-        test_loss, test_acc_1, test_acc_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        test_loss = stats["loss"]
+        test_acc_1, test_acc_5 = stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+
+        # Return stats in a structured way
         results_data = {
             # Validation
             "val_loss": float(val_loss),
@@ -101,3 +92,50 @@ class CifarCustomClient(fl.client.NumPyClient):
             "test_size": len(self.test_loader),
         }
         return float(val_loss), len(self.valid_loader), results_data
+
+
+class CifarNeVeClient(CifarDefaultClient):
+    def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
+                 aux_loader: DataLoader, dataset_name: str = "cifar10", client_id: int = "0",
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001,
+                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True):
+        super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
+                         dataset_name=dataset_name, client_id=client_id, lr=lr, momentum=momentum,
+                         weight_decay=weight_decay, amp=amp)
+
+        self.aux_loader = aux_loader
+        self.scheduler = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum,
+                                                stop_threshold=neve_epsilon,
+                                                client_id=client_id)
+
+    def get_parameters(self, config):
+        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+
+    def set_parameters(self, parameters):
+        params_dict = zip(self.model.state_dict().keys(), parameters)
+        state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
+        self.model.load_state_dict(state_dict, strict=True)
+
+    def fit(self, parameters, config):
+        self.set_parameters(parameters)
+        # Get the velocity value before the training step (velocity at time t-1)
+        # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
+        with self.scheduler:
+            _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
+        # TODO: init_step=True should be done only the really first time we evaluate the velocity
+        _ = self.scheduler.step(init_step=True)
+        self.scheduler.save_activations()
+        # Perform default fit step
+        return super().fit(parameters, config)
+
+    def evaluate(self, parameters, config):
+        self.set_parameters(parameters)
+        # load neve's activations
+        self.scheduler.load_activations(self.device)
+        # Get the velocity value after the training step (velocity at time t)
+        with self.scheduler:
+            _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
+        velocity_data = self.scheduler.step()
+        print("Velocity data:", velocity_data["neve"])
+        # Perform default evaluation step
+        return super().evaluate(parameters, config)

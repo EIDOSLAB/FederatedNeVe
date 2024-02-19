@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
-from src.my_flwr.clients import CifarCustomClient
+from src.my_flwr.clients import CifarDefaultClient
 from src.utils import set_seeds
 
 
@@ -25,15 +25,13 @@ def main(args):
     train_loaders, val_loaders, test_loader = prepare_data(train, test, seed=args.seed, num_clients=args.num_clients,
                                                            batch_size=args.batch_size)
 
-    # TODO: WHEN RANDOM_DATA GENERATION IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
+    # TODO: generate a get_client() function that returns the correct Client when we will try neve
     fl.client.start_client(server_address=args.server_address,
-                           client=CifarCustomClient(train_loader=train_loaders[args.current_client],
-                                                    valid_loader=val_loaders[args.current_client],
-                                                    test_loader=test_loader,
-                                                    aux_loader=val_loaders[args.current_client],
-                                                    client_id=args.current_client,
-                                                    neve_epsilon=args.neve_epsilon,
-                                                    neve_momentum=args.neve_momentum).to_client()
+                           client=CifarDefaultClient(train_loader=train_loaders[args.current_client],
+                                                     valid_loader=val_loaders[args.current_client],
+                                                     test_loader=test_loader,
+                                                     dataset_name=args.dataset_name,
+                                                     client_id=args.current_client).to_client()
                            )
 
 
