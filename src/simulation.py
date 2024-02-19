@@ -1,10 +1,10 @@
-import flwr as fl
-import torch
-
 # ----- ----- ----- ----- -----
 # TODO: FIX SRC IMPORTS IN A BETTER WAY
 import sys
 from pathlib import Path
+
+import flwr as fl
+import torch
 
 import wandb
 
@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
-from src.my_flwr.clients import NeVeCifarClient
+from src.my_flwr.clients import CifarCustomClient
 from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.utils import set_seeds
 
@@ -32,8 +32,10 @@ def client_fn(cid: str):
     # TODO: WHEN AUX_LOADER IS IMPLEMENTED PASS THE AUX_LOADER INSTEAD OF THE VALIDATION ONE
     valid_loader = val_loaders[int(cid) % len(val_loaders)]
     print("Client ID:", cid, "entered client_fn")
-    return NeVeCifarClient(train_loader, test_loader, aux_loader=valid_loader,
-                           neve_epsilon=neve_epsilon, neve_momentum=neve_momentum).to_client()
+    return CifarCustomClient(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
+                             use_neve=False, aux_loader=valid_loader,
+                             client_id=int(cid),
+                             neve_epsilon=neve_epsilon, neve_momentum=neve_momentum).to_client()
 
 
 def main(args):
@@ -65,7 +67,7 @@ def main(args):
         config=fl.server.ServerConfig(num_rounds=args.epochs),  # Specify number of FL rounds
         strategy=fl.server.strategy.FedAvg(fit_metrics_aggregation_fn=weighted_average_fit,
                                            evaluate_metrics_aggregation_fn=weighted_average_eval),  # A Flower strategy
-        client_resources=client_resources
+        client_resources=client_resources,
     )
     # Save model...
 

@@ -1,7 +1,8 @@
 import copy
 
-from NeVe.utils.hook import NeVeHook
 from torch import nn
+
+from NeVe.utils.hook import NeVeHook
 
 
 def _mse(a, b):

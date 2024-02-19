@@ -1,11 +1,11 @@
-import torch
-
-import wandb
-
 # ----- ----- ----- ----- -----
 # TODO: FIX SRC IMPORTS IN A BETTER WAY
 import sys
 from pathlib import Path
+
+import torch
+
+import wandb
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent

@@ -5,101 +5,99 @@ import torch
 from torch.utils.data import DataLoader
 
 from NeVe.federated import FederatedNeVeOptimizer
-from models.test import Net
+from models import get_model
+from utils import get_optimizer, get_scheduler
+from utils.trainer import run
 
 
-class NeVeCifarClient(fl.client.NumPyClient):
-    def __init__(self, train_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader, client_id: int = 0,
-                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001, use_neve: bool = False):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model = Net().to(self.device)
+class CifarCustomClient(fl.client.NumPyClient):
+    def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
+                 aux_loader: DataLoader, client_id: int = "0",
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001, use_neve: bool = False,
+                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.amp = amp
+        self.epoch = 0
+        self.model = get_model(dataset="cifar10", device=self.device)
         self.train_loader = train_loader
+        self.valid_loader = valid_loader
         self.test_loader = test_loader
         self.aux_loader = aux_loader
         self.client_id = client_id
+        self.lr = lr
+        self.momentum = momentum
+        self.weight_decay = weight_decay
         self.neve = None
-        print("Client ID:", self.client_id, "entered __init__")
+        self.optimizer = get_optimizer(self.model,
+                                       starting_lr=self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
+        self.scheduler = get_scheduler(self.model, self.optimizer, use_neve=use_neve)
+        self.scaler = torch.cuda.amp.GradScaler(enabled=(self.device == "cuda" and self.amp))
         if use_neve:
             self.neve = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum, stop_threshold=neve_epsilon,
                                                client_id=client_id)
+            self.scheduler = None
+            # TODO: also update lr value
 
     def get_parameters(self, config):
-        print("Client ID:", self.client_id, "entered get_parameters")
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
 
     def set_parameters(self, parameters):
-        print("Client ID:", self.client_id, "entered set_parameters")
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         self.model.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        print("Client ID:", self.client_id, "entered fit")
         # Get the velocity value before the training step (velocity at time t-1)
         # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
         if self.neve:
             with self.neve:
-                _ = self.test(self.aux_loader)
+                _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
             # TODO: init_step=True should be done only the really first time we evaluate the velocity
             _ = self.neve.step(init_step=True)
             self.neve.save_activations()
-        loss, accuracy = self.train(self.train_loader, epochs=1)
-        print("Client ID:", self.client_id, "finished fit")
-        return self.get_parameters(config={}), len(self.train_loader), {"loss": float(loss),
-                                                                        "accuracy": float(accuracy)}
+        stats = run(self.model, self.train_loader, self.optimizer, self.scaler, self.device,
+                    self.amp, self.epoch, "Train")
+        loss, accuracy_1, accuracy_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        self.epoch += 1
+        self.scheduler.step()
+        results_data = {
+            "loss": float(loss),
+            "accuracy_top1": float(accuracy_1),
+            "accuracy_top5": float(accuracy_5),
+            "client_id": self.client_id,
+            "lr": self.optimizer.param_groups[0]["lr"],
+        }
+        return self.get_parameters(config={}), len(self.train_loader), results_data
 
     def evaluate(self, parameters, config):
-        print("Client ID:", self.client_id, "entered evaluate")
         self.set_parameters(parameters)
         if self.neve:
             # load neve's activations
             self.neve.load_activations(self.device)
             # Get the velocity value after the training step (velocity at time t)
             with self.neve:
-                self.test(self.aux_loader)
+                _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
             velocity_data = self.neve.step()
             print("Velocity data:", velocity_data["neve"])
+        # Validate the model on the validation-set
+        stats = run(self.model, self.valid_loader, None, self.scaler, self.device,
+                    self.amp, self.epoch, "Validation")
+        val_loss, val_acc_1, val_acc_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
         # Validate the model on the test-set
-        loss, accuracy = self.test(self.test_loader)
-        print("Client ID:", self.client_id, "exit evaluate")
-        return float(loss), len(self.test_loader), {"loss": float(loss), "accuracy": float(accuracy)}
-
-    def train(self, dataloader, epochs):
-        """Train the network on the training set."""
-        print("Client ID:", self.client_id, "entered train")
-        criterion = torch.nn.CrossEntropyLoss()
-        correct, total, total_loss = 0, 0, 0.0
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
-        for _ in range(epochs):
-            for data in dataloader:
-                images, labels = data[0].to(self.device), data[1].to(self.device)
-                optimizer.zero_grad()
-                outputs = self.model(images)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-                total_loss += loss
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        accuracy = correct / total
-        print("Client ID:", self.client_id, "exit train")
-        return total_loss, accuracy
-
-    def test(self, dataloader):
-        """Validate the network on the entire test set."""
-        print("Client ID:", self.client_id, "entered test")
-        criterion = torch.nn.CrossEntropyLoss()
-        correct, total, loss = 0, 0, 0.0
-        with torch.no_grad():
-            for data in dataloader:
-                images, labels = data[0].to(self.device), data[1].to(self.device)
-                outputs = self.model(images)
-                loss += criterion(outputs, labels).item()
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        accuracy = correct / total
-        print("Client ID:", self.client_id, "exit test")
-        return loss, accuracy
+        stats = run(self.model, self.test_loader, None, self.scaler, self.device,
+                    self.amp, self.epoch, "Test")
+        test_loss, test_acc_1, test_acc_5 = stats["loss"], stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        results_data = {
+            # Validation
+            "val_loss": float(val_loss),
+            "val_accuracy_top1": float(val_acc_1),
+            "val_accuracy_top5": float(val_acc_5),
+            "val_size": len(self.valid_loader),
+            # Test
+            "test_loss": float(test_loss),
+            "test_accuracy_top1": float(test_acc_1),
+            "test_accuracy_top5": float(test_acc_5),
+            "test_size": len(self.test_loader),
+        }
+        return float(val_loss), len(self.valid_loader), results_data
