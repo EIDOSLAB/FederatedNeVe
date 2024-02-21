@@ -35,6 +35,9 @@ def main(args):
         "test": test_loader,
         "aux": aux_loader,
     }
+    # Init seeds
+    set_seeds(args.seed)  # Just to be sure to be in the same spot whatever we generated the aux dataset or not
+
     # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
     model = get_model(dataset=args.dataset_name, device=args.device)
     optimizer = get_optimizer(model)
