@@ -37,6 +37,6 @@ def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 
 
 def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True):
     if use_neve:
-        return NeVeOptimizer(model, scheduler=ReduceLROnLocalPlateau(optimizer, patience=2))
+        return NeVeOptimizer(model, scheduler=ReduceLROnLocalPlateau(optimizer))
     else:
         return MultiStepLR(optimizer, milestones=[100, 150])
