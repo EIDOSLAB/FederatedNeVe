@@ -4,7 +4,7 @@
 # config.yaml è questo config
 
 program: classical.py
-name: "cifar10 test"
+name: "cifar10 - classical - default + neve"
 command:
   - ${env}
   - python3
@@ -13,7 +13,7 @@ command:
 method: grid
 parameters:
   seed:
-    values: [ 0, 1, 2 ]
+    values: [ 0, 1, 2, 3, 4 ]
   amp:
     values: [ 1 ]
   device:
@@ -27,4 +27,4 @@ parameters:
   dataset-name:
     values: [ "cifar10" ]
   use-neve:
-    values: [ 0 ]
+    values: [ 0, 1 ]

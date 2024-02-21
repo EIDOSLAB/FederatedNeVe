@@ -39,7 +39,7 @@ class ReduceLROnLocalPlateau(object):
             each update. Default: ``False``.
     """
 
-    def __init__(self, optimizer, mode='min', factor=0.1, patience=10,
+    def __init__(self, optimizer, mode='min', factor=0.5, patience=10,
                  threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-8, verbose=False):
 
         if factor >= 1.0:

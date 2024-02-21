@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from NeVe.utils import add_neve_arguments
+from src.NeVe.utils import add_neve_arguments
 
 
 def int2bool(i):

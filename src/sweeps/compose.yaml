@@ -1,49 +1,53 @@
 version: "3"
+
 services:
   server:
     image: eidos-service.di.unito.it/dalmasso/federated-neve
-    command: [ "python3", "server.py", "--server-address=127.0.0.1:6789", "--amp=1", "--dataset-root=/scratch/datasets/classification/", "--batch-size=100", "--dataset-name=cifar10", "--use-neve=0", "--seed=0" ]
+    command: [ "python3", "server.py",
+               "--server-address=localhost:6789",
+               "--amp=1",
+               "--dataset-root=/scratch/datasets/classification/",
+               "--batch-size=100",
+               "--dataset-name=cifar10",
+               "--use-neve=0",
+               "--seed=0" ]
     ports:
       - "6789:6789"
     volumes:
       - /scratch/:/scratch/
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: "all"
-              capabilities: [ gpu ]
 
   client0:
     image: eidos-service.di.unito.it/dalmasso/federated-neve
-    command: [ "python3", "client.py", "--server-address=127.0.0.1:6789", "--current-client=0", "--amp=1", "--dataset-root=/scratch/datasets/classification/", "--batch-size=100", "--dataset-name=cifar10", "--use-neve=0", "--seed=0" ]
+    command: [ "python3", "client.py",
+               "--server-address=localhost:6789",
+               "--current-client=0",
+               "--amp=1",
+               "--dataset-root=/scratch/datasets/classification/",
+               "--batch-size=100",
+               "--dataset-name=cifar10",
+               "--use-neve=0",
+               "--seed=0" ]
     depends_on:
       - server
     ports:
       - "6790:6790"
     volumes:
       - /scratch/:/scratch/
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: "all"
-              capabilities: [ gpu ]
+
   client1:
     image: eidos-service.di.unito.it/dalmasso/federated-neve:python
-    command: [ "python3", "client.py", "--server-address=127.0.0.1:6789", "--current-client=1", "--amp=1", "--dataset-root=/scratch/datasets/classification/", "--batch-size=100", "--dataset-name=cifar10", "--use-neve=0", "--seed=0" ]
+    command: [ "python3", "client.py",
+               "--server-address=localhost:6789",
+               "--current-client=1",
+               "--amp=1",
+               "--dataset-root=/scratch/datasets/classification/",
+               "--batch-size=100",
+               "--dataset-name=cifar10",
+               "--use-neve=0",
+               "--seed=0" ]
     depends_on:
       - server
     ports:
       - "6791:6791"
     volumes:
       - /scratch/:/scratch/
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: "all"
-              capabilities: [ gpu ]

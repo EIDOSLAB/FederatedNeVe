@@ -4,10 +4,10 @@ import flwr as fl
 import torch
 from torch.utils.data import DataLoader
 
-from NeVe.federated import FederatedNeVeOptimizer
-from models import get_model
-from utils import get_optimizer, get_scheduler
-from utils.trainer import run
+from src.NeVe.federated import FederatedNeVeOptimizer
+from src.models import get_model
+from src.utils import get_optimizer, get_scheduler
+from src.utils.trainer import run
 
 
 class CifarDefaultClient(fl.client.NumPyClient):
