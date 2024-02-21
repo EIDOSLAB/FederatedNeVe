@@ -63,7 +63,8 @@ def main(args):
         print(f"Train: {logs['train']}")
         print(f"Val: {logs['val']}")
         print(f"Test: {logs['test']}")
-        print(f"Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
+        if args.use_neve and 'aux' in logs.keys():
+            print(f"Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
         print("-----\n")
         if neve_data and not neve_data.continue_training:
             # TODO: ADD BREAK CONDITION
