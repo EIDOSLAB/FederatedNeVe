@@ -3,7 +3,6 @@
 import sys
 from pathlib import Path
 
-import flwr as fl
 import torch
 import wandb
 
@@ -13,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 # ----- ----- ----- ----- -----
 
+import flwr as fl
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
 from src.my_flwr.clients import CifarDefaultClient
@@ -63,6 +63,9 @@ def main(args):
         num_clients=args.num_clients,  # Total number of clients available
         config=fl.server.ServerConfig(num_rounds=args.epochs),  # Specify number of FL rounds
         strategy=fl.server.strategy.FedAvg(fit_metrics_aggregation_fn=weighted_average_fit,
+                                           min_fit_clients=args.num_clients,
+                                           min_evaluate_clients=args.num_clients,
+                                           min_available_clients=args.num_clients,
                                            evaluate_metrics_aggregation_fn=weighted_average_eval),  # A Flower strategy
         client_resources=client_resources,
     )

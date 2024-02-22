@@ -16,7 +16,7 @@ services:
     ports:
       - "6789:6789"
     volumes:
-      - /scratch/:/scratch/
+      - /mnt/fast-scratch/$USER:/scratch
 
   client0:
     image: eidos-service.di.unito.it/dalmasso/federated-neve
@@ -36,7 +36,7 @@ services:
     ports:
       - "6790:6790"
     volumes:
-      - /scratch/:/scratch/
+      - /mnt/fast-scratch/$USER:/scratch
 
   client1:
     image: eidos-service.di.unito.it/dalmasso/federated-neve:python
@@ -56,4 +56,4 @@ services:
     ports:
       - "6791:6791"
     volumes:
-      - /scratch/:/scratch/
+      - /mnt/fast-scratch/$USER:/scratch

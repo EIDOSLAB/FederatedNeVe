@@ -4,7 +4,7 @@
 # config.yaml è questo config
 
 program: simulation.py
-name: "cifar10 federated test 1 client"
+name: "cifar10 federated test 1, 2, 5 clients no neve"
 command:
   - ${env}
   - python3
@@ -13,7 +13,7 @@ command:
 method: grid
 parameters:
   seed:
-    values: [ 0, 1, 2 ]
+    values: [ 0, 1, 2, 3, 4 ]
   amp:
     values: [ 1 ]
   device:
@@ -22,13 +22,14 @@ parameters:
     values: [ 100 ]
   epochs:
     values: [ 250 ]
-  server-address:
-    values: [ "0.0.0.0:8080" ]
   dataset-root:
     values: [ "/scratch/datasets/classification/" ]
   dataset-name:
     values: [ "cifar10" ]
   use-neve:
     values: [ 0 ]
+  # Federated parameters
+  server-address:
+    values: [ "localhost:8080" ]
   num-clients:
     values: [ 1, 2, 5 ]
