@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import torch
-
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -24,6 +23,13 @@ from src.NeVe import NeVeOptimizer
 def main(args):
     # Init seeds
     set_seeds(args.seed)
+
+    # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
+    model = get_model(dataset=args.dataset_name, device=args.device)
+    optimizer = get_optimizer(model)
+    scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve)
+    scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
+
     # Load Data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name, seed=args.seed, generate_aux_set=args.use_neve)
     train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=1,
@@ -37,12 +43,6 @@ def main(args):
     }
     # Init seeds
     set_seeds(args.seed)  # Just to be sure to be in the same spot whatever we generated the aux dataset or not
-
-    # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
-    model = get_model(dataset=args.dataset_name, device=args.device)
-    optimizer = get_optimizer(model)
-    scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve)
-    scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)

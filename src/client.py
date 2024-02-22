@@ -21,9 +21,9 @@ def main(args):
     # Init seeds
     set_seeds(args.seed)
     # Load data
-    train, test = get_dataset(args.dataset_root, args.dataset_name)
-    train_loaders, val_loaders, test_loader = prepare_data(train, test, seed=args.seed, num_clients=args.num_clients,
-                                                           batch_size=args.batch_size)
+    train, test, aux = get_dataset(args.dataset_root, args.dataset_name, seed=args.seed, generate_aux_set=args.use_neve)
+    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=args.num_clients,
+                                                                       seed=args.seed, batch_size=args.batch_size)
 
     # TODO: generate a get_client() function that returns the correct Client when we will try neve
     fl.client.start_client(server_address=args.server_address,

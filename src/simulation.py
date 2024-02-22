@@ -5,7 +5,6 @@ from pathlib import Path
 
 import flwr as fl
 import torch
-
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -45,9 +44,9 @@ def main(args):
     neve_momentum = args.neve_momentum
     dataset_name = args.dataset_name
     # Initialize global model and data
-    train, test = get_dataset(args.dataset_root, args.dataset_name)
-    train_loaders, val_loaders, test_loader = prepare_data(train, test, num_clients=args.num_clients,
-                                                           seed=args.seed, batch_size=args.batch_size)
+    train, test, aux = get_dataset(args.dataset_root, args.dataset_name, seed=args.seed, generate_aux_set=args.use_neve)
+    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=args.num_clients,
+                                                                       seed=args.seed, batch_size=args.batch_size)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Performing training on:", device)
 

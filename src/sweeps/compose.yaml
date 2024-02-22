@@ -6,8 +6,10 @@ services:
     command: [ "python3", "server.py",
                "--server-address=localhost:6789",
                "--amp=1",
-               "--dataset-root=/scratch/datasets/classification/",
+               "--device=cuda"
                "--batch-size=100",
+               "--epochs=250"
+               "--dataset-root=/scratch/datasets/classification/",
                "--dataset-name=cifar10",
                "--use-neve=0",
                "--seed=0" ]
@@ -22,8 +24,10 @@ services:
                "--server-address=localhost:6789",
                "--current-client=0",
                "--amp=1",
-               "--dataset-root=/scratch/datasets/classification/",
+               "--device=cuda"
                "--batch-size=100",
+               "--epochs=250"
+               "--dataset-root=/scratch/datasets/classification/",
                "--dataset-name=cifar10",
                "--use-neve=0",
                "--seed=0" ]
@@ -40,8 +44,10 @@ services:
                "--server-address=localhost:6789",
                "--current-client=1",
                "--amp=1",
-               "--dataset-root=/scratch/datasets/classification/",
+               "--device=cuda"
                "--batch-size=100",
+               "--epochs=250"
+               "--dataset-root=/scratch/datasets/classification/",
                "--dataset-name=cifar10",
                "--use-neve=0",
                "--seed=0" ]
