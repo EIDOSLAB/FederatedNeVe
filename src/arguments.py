@@ -27,7 +27,7 @@ def _get_default_arguments(parser):
     parser.add_argument("--dataset-root", type=str, default="../datasets",
                         help="Dataset root folder.")
     parser.add_argument("--dataset-name", type=str, default="cifar10",
-                        choices=["cifar10", "cifar100"],
+                        choices=["emnist", "cifar10", "cifar100", "imagenet100"],
                         help="Dataset folder name.")
     # NeVe
     parser = add_neve_arguments(parser)

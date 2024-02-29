@@ -27,7 +27,7 @@ def main(args):
     # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
     model = get_model(dataset=args.dataset_name, device=args.device)
     optimizer = get_optimizer(model)
-    scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve)
+    scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve, dataset=args.dataset_name)
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Load Data

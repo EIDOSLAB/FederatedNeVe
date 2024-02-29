@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
 # ----- ----- ----- ----- -----
 
 from src.arguments import get_args
-from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.utils import set_seeds
+from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 
 
 def main(args):

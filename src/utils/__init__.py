@@ -35,8 +35,13 @@ def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 
     return optim
 
 
-def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True):
+def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True, dataset: str = "cifar10"):
     if use_neve:
         return NeVeOptimizer(model, scheduler=ReduceLROnLocalPlateau(optimizer))
-    else:
-        return MultiStepLR(optimizer, milestones=[100, 150])
+
+    match dataset.lower():
+        case "emnist":
+            milestones = [30, 60]
+        case _:
+            milestones = [100, 150]
+    return MultiStepLR(optimizer, milestones=milestones)
