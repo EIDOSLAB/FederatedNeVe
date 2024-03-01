@@ -4,7 +4,7 @@
 # config.yaml è questo config
 
 program: classical.py
-name: "cifar10 - classical - default + neve"
+name: "emnist - classical - default + neve"
 command:
   - ${env}
   - python3
@@ -19,12 +19,12 @@ parameters:
   device:
     values: [ "cuda" ]
   batch-size:
-    values: [ 100 ]
+    values: [ 256 ]
   epochs:
-    values: [ 250 ]
+    values: [ 90 ]
   dataset-root:
     values: [ "/scratch/datasets/classification/" ]
   dataset-name:
-    values: [ "cifar10" ]
+    values: [ "emnist" ]
   use-neve:
     values: [ 0, 1 ]

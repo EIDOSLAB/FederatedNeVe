@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import torch
+
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -30,6 +31,15 @@ def client_fn(cid: str):
     train_loader = train_loaders[int(cid) % len(train_loaders)]
     valid_loader = val_loaders[int(cid) % len(val_loaders)]
     # TODO: ADD AUX LOADER
+    # TODO: add these params
+    """
+    model_name = args.model_name,
+    optimizer_name = args.optimizer,
+    lr = args.lr,
+    momentum = args.momentum,
+    weight_decay = args.weight_decay,
+    amp = args.amp,
+    """
     return CifarDefaultClient(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                               dataset_name=dataset_name, client_id=int(cid)).to_client()
 

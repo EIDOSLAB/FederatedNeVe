@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import torch
+
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -24,10 +25,10 @@ def main(args):
     # Init seeds
     set_seeds(args.seed)
 
-    # TODO: ADD PARAMETERS TO ARGS FOR THESE 3 FUNCTIONS
-    model = get_model(dataset=args.dataset_name, device=args.device)
-    optimizer = get_optimizer(model)
-    scheduler = get_scheduler(model, optimizer, use_neve=args.use_neve, dataset=args.dataset_name)
+    model = get_model(model_name=args.model_name, dataset=args.dataset_name, device=args.device)
+    optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
+                              momentum=args.momentum, weight_decay=args.weight_decay)
+    scheduler = get_scheduler(model, optimizer=optimizer, use_neve=args.use_neve, dataset=args.dataset_name)
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Load Data

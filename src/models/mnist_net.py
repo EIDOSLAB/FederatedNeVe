@@ -1,7 +1,6 @@
 # Model from: https://github.com/rasbt/deeplearning-models/blob/master/pytorch_ipynb/cnn/cnn-resnet18-mnist.ipynb
 # They say it is a custom implementation of the ResNet-34 architecture, and it is a derivative of the code provided
 # at https://pytorch.org/docs/0.4.0/_modules/torchvision/models/resnet.html.
-import torch.nn.functional as F
 from torch import nn
 
 

@@ -18,10 +18,20 @@ def _get_default_arguments(parser):
                         help="If True use torch.cuda.amp.")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cuda",
                         help="Device type.")
+    parser.add_argument("--model-name", type=str, default="resnet32",
+                        help="Name of the model to train.")
+    parser.add_argument("--optimizer", type=str, choices=["sgd", "adam"], default="sgd",
+                        help="Optimizer name.")
     parser.add_argument("--batch-size", type=int, default=32,
                         help="Batch size, an higher value requires more memory.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
+    parser.add_argument("--lr", type=float, default=0.1,
+                        help="Optimizer starting learning rate.")
+    parser.add_argument("--momentum", type=float, default=0.9,
+                        help="Optimizer momentum.")
+    parser.add_argument("--weight-decay", type=float, default=5e-4,
+                        help="Optimizer weight decay.")
 
     # Dataset
     parser.add_argument("--dataset-root", type=str, default="../datasets",

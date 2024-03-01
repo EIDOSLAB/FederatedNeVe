@@ -30,7 +30,13 @@ def main(args):
                            client=CifarDefaultClient(train_loader=train_loaders[args.current_client],
                                                      valid_loader=val_loaders[args.current_client],
                                                      test_loader=test_loader,
+                                                     model_name=args.model_name,
                                                      dataset_name=args.dataset_name,
+                                                     optimizer_name=args.optimizer,
+                                                     lr=args.lr,
+                                                     momentum=args.momentum,
+                                                     weight_decay=args.weight_decay,
+                                                     amp=args.amp,
                                                      client_id=args.current_client).to_client()
                            )
 

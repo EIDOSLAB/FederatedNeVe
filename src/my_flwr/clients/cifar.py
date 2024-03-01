@@ -12,12 +12,13 @@ from src.utils.trainer import run
 
 class CifarDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
-                 dataset_name: str = "cifar10", client_id: int = "0",
-                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True):
+                 model_name: str = "resnet32", dataset_name: str = "cifar10", optimizer_name: str = "sgd",
+                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
+                 client_id: int = "0"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.amp = amp
         self.epoch = 0
-        self.model = get_model(dataset=dataset_name, device=str(self.device))
+        self.model = get_model(model_name=model_name, dataset=dataset_name, device=str(self.device))
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader
@@ -25,9 +26,9 @@ class CifarDefaultClient(fl.client.NumPyClient):
         self.lr = lr
         self.momentum = momentum
         self.weight_decay = weight_decay
-        self.optimizer = get_optimizer(self.model, starting_lr=self.lr,
-                                       weight_decay=self.weight_decay, momentum=self.momentum)
-        self.scheduler = get_scheduler(self.model, self.optimizer, use_neve=False)
+        self.optimizer = get_optimizer(self.model, opt_name=optimizer_name, starting_lr=self.lr,
+                                       momentum=self.momentum, weight_decay=self.weight_decay)
+        self.scheduler = get_scheduler(self.model, optimizer=self.optimizer, use_neve=False, dataset=dataset_name)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(self.device == "cuda" and self.amp))
 
     def get_parameters(self, config):
