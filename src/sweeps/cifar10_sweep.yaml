@@ -26,5 +26,7 @@ parameters:
     values: [ "/scratch/datasets/classification/" ]
   dataset-name:
     values: [ "emnist" ]
+  model-name:
+    values: [ "resnet18" ]
   use-neve:
     values: [ 0, 1 ]

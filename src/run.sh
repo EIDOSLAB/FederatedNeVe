@@ -1,18 +1,19 @@
 #!/bin/bash
 
 # Parametri per il server
-params="--amp 1 --device cuda --batch-size 100 --epochs 250"
+params="--amp 1 --device cuda --batch-size 256 --epochs 90"
 use_neve="--use-neve 0"
 seed="--seed 0"
-dataset="--dataset-name cifar10"
+dataset="--dataset-name emnist"
+model="--model-name resnet18"
 
 # Numero di clients da avviare
-num_clients=10
+num_clients=20
 clients="--num-clients $num_clients"
 
 # Avvia il server
-echo "Avvio del server con parametri: $params $clients $seed $dataset"
-python server.py $params $use_neve $clients $seed $dataset &
+echo "Avvio del server con parametri: $params $clients $seed $dataset $model"
+python server.py $params $use_neve $clients $seed $dataset $model &
 
 # Ottieni l'ID del processo del server
 server_pid=$!
@@ -33,7 +34,7 @@ do
         gpu_id=1
     fi
     echo "Avvio del client $i con parametri: $params $use_neve $clients $seed $dataset --current-client $i, sulla GPU: $gpu_id"
-    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $use_neve $clients $seed $dataset "--current-client" $i &
+    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $use_neve $clients $seed $dataset $model "--current-client" $i &
 done
 
 # Attendi che tutti i processi dei client siano completati
