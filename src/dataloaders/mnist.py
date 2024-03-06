@@ -4,18 +4,22 @@ from torchvision.datasets import EMNIST
 
 _DEFAULT_MNIST_DATA = {
     "emnist": {
-        "mean": (0.1307,),
-        "std": (0.3081,),
+        "mean": (0.1307, 0.1307, 0.1307),
+        "std": (0.3081, 0.3081, 0.3081),
         "transforms": [
             # Train
             transforms.Compose([
+                transforms.RandomCrop(24),
+                transforms.Grayscale(num_output_channels=3),
                 transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
+                transforms.Normalize((0.1307, 0.1307, 0.1307), (0.3081, 0.3081, 0.3081))
             ]),
             # Validation/Test
             transforms.Compose([
+                transforms.CenterCrop(24),
+                transforms.Grayscale(num_output_channels=3),
                 transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
+                transforms.Normalize((0.1307, 0.1307, 0.1307), (0.3081, 0.3081, 0.3081))
             ])
         ],
     },

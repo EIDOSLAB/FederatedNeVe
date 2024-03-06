@@ -18,7 +18,7 @@ def _get_default_arguments(parser):
                         help="If True use torch.cuda.amp.")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cuda",
                         help="Device type.")
-    parser.add_argument("--model-name", type=str, default="resnet32",
+    parser.add_argument("--model-name", type=str, default="resnet18",
                         help="Name of the model to train.")
     parser.add_argument("--optimizer", type=str, choices=["sgd", "adam"], default="sgd",
                         help="Optimizer name.")

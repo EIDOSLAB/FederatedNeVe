@@ -13,7 +13,7 @@ def get_dataset(ds_root: str, ds_name: str, seed: int = 0, generate_aux_set: boo
         case "cifar100":
             train, test = get_cifar_100(ds_root)
         case "emnist":
-            sample_shape = (1, 28, 28)
+            sample_shape = (3, 28, 28)
             train, test = get_emnist(ds_root)
         case _:
             assert False, f"Dataset '{ds_name}' not managed yet!"
