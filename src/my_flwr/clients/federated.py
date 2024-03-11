@@ -1,16 +1,18 @@
 from collections import OrderedDict
 
 import flwr as fl
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
+from src.NeVe.scheduler import ReduceLROnLocalPlateau
 from src.NeVe.federated import FederatedNeVeOptimizer
 from src.models import get_model
 from src.utils import get_optimizer, get_scheduler
 from src.utils.trainer import run
 
 
-class CifarDefaultClient(fl.client.NumPyClient):
+class FederatedDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
@@ -95,19 +97,26 @@ class CifarDefaultClient(fl.client.NumPyClient):
         return float(val_loss), len(self.valid_loader), results_data
 
 
-class CifarNeVeClient(CifarDefaultClient):
+class FederatedNeVeClient(FederatedDefaultClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
-                 aux_loader: DataLoader, dataset_name: str = "cifar10", client_id: int = "0",
-                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001,
-                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True):
+                 aux_loader: DataLoader,
+                 dataset_name: str = "cifar10", optimizer_name: str = "sgd",
+                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
+                 client_id: int = "0",
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
-                         dataset_name=dataset_name, client_id=client_id, lr=lr, momentum=momentum,
-                         weight_decay=weight_decay, amp=amp)
+                         dataset_name=dataset_name, optimizer_name=optimizer_name,
+                         lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
+                         client_id=client_id)
 
         self.aux_loader = aux_loader
-        self.scheduler = FederatedNeVeOptimizer(self.model, velocity_momentum=neve_momentum,
-                                                stop_threshold=neve_epsilon,
-                                                client_id=client_id)
+        self.scheduler: FederatedNeVeOptimizer = FederatedNeVeOptimizer(self.model,
+                                                                        ReduceLROnLocalPlateau(self.optimizer),
+                                                                        velocity_momentum=neve_momentum,
+                                                                        stop_threshold=neve_epsilon,
+                                                                        client_id=client_id)
+        self.is_neve_setupped = False
+        self.continue_training = True
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -119,24 +128,34 @@ class CifarNeVeClient(CifarDefaultClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        # Get the velocity value before the training step (velocity at time t-1)
-        # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
-        with self.scheduler:
-            _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
-        # TODO: init_step=True should be done only the really first time we evaluate the velocity
-        _ = self.scheduler.step(init_step=True)
-        self.scheduler.save_activations()
-        # Perform default fit step
-        return super().fit(parameters, config)
+        if not self.is_neve_setupped:
+            # Get the velocity value before the training step (velocity at time t-1)
+            # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
+            with self.scheduler:
+                _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
+            # TODO: init_step=True should be done only the really first time we evaluate the velocity
+            _ = self.scheduler.step(init_step=True)
+            # self.scheduler.save_activations()
+            self.is_neve_setupped = True
 
-    def evaluate(self, parameters, config):
-        self.set_parameters(parameters)
+        # Perform default fit step
+        if self.continue_training:
+            params, len_ds, train_logs = super().fit(parameters, config)
+        else:
+            return [], len(self.train_loader), {}
         # load neve's activations
-        self.scheduler.load_activations(self.device)
+        # self.scheduler.load_activations(self.device)
         # Get the velocity value after the training step (velocity at time t)
         with self.scheduler:
             _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
         velocity_data = self.scheduler.step()
-        print("Velocity data:", velocity_data["neve"])
-        # Perform default evaluation step
-        return super().evaluate(parameters, config)
+        for key, value in velocity_data.as_dict["neve"].items():
+            if isinstance(value, dict):
+                continue
+            train_logs[f"neve.{key}"] = value.item()
+        train_logs["neve.continue_training"] = velocity_data.continue_training
+        if self.continue_training:
+            self.continue_training = velocity_data.continue_training
+        print(f"Client: {self.client_id} - Model Avg. Velocity: {train_logs['neve.model_avg_value']}")
+        print(f"Client: {self.client_id} - Continue training? {self.continue_training}")
+        return params, len_ds, train_logs

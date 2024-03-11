@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset, ConcatDataset
 from torchvision import transforms
 from torchvision.datasets import EMNIST
@@ -41,4 +42,9 @@ def get_emnist(path: str, transform=None) -> tuple[Dataset, Dataset]:
     # Combina i dataset
     emnist_combined_train = ConcatDataset([train_digits_set, train_letters_set])
     emnist_combined_test = ConcatDataset([test_digits_set, test_letters_set])
+
+    train_size = int(0.1 * len(emnist_combined_train))
+    test_size = len(emnist_combined_train) - train_size
+    emnist_combined_train, _ = torch.utils.data.random_split(emnist_combined_train, [train_size, test_size])
+
     return emnist_combined_train, emnist_combined_test

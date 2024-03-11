@@ -6,6 +6,8 @@ from pathlib import Path
 import flwr as fl
 import wandb
 
+from NeVe.federated.flwr.strategies.fedeneveavg import FedNeVeAvg
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent
 if str(ROOT) not in sys.path:
@@ -25,11 +27,11 @@ def main(args):
     # Start server
     fl.server.start_server(server_address=args.server_address,
                            config=fl.server.ServerConfig(num_rounds=args.epochs),
-                           strategy=fl.server.strategy.FedAvg(fit_metrics_aggregation_fn=weighted_average_fit,
-                                                              min_fit_clients=args.num_clients,
-                                                              min_evaluate_clients=args.num_clients,
-                                                              min_available_clients=args.num_clients,
-                                                              evaluate_metrics_aggregation_fn=weighted_average_eval)
+                           strategy=FedNeVeAvg(fit_metrics_aggregation_fn=weighted_average_fit,
+                                               min_fit_clients=args.num_clients,
+                                               min_evaluate_clients=args.num_clients,
+                                               min_available_clients=args.num_clients,
+                                               evaluate_metrics_aggregation_fn=weighted_average_eval)
                            )
     # End wandb run
     wandb.run.finish()

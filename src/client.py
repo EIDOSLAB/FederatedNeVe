@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data
-from src.my_flwr.clients import CifarDefaultClient
+from src.my_flwr.clients import FederatedDefaultClient, FederatedNeVeClient
 from src.utils import set_seeds
 
 
@@ -35,16 +35,16 @@ def main(args):
 
     # TODO: generate a get_client() function that returns the correct Client when we will try neve
     fl.client.start_client(server_address=args.server_address,
-                           client=CifarDefaultClient(train_loader=train_loader,
-                                                     valid_loader=val_loader,
-                                                     test_loader=test_loader,
-                                                     dataset_name=args.dataset_name,
-                                                     optimizer_name=args.optimizer,
-                                                     lr=args.lr,
-                                                     momentum=args.momentum,
-                                                     weight_decay=args.weight_decay,
-                                                     amp=args.amp,
-                                                     client_id=args.current_client).to_client()
+                           client=FederatedNeVeClient(train_loader=train_loader,
+                                                      valid_loader=val_loader,
+                                                      test_loader=test_loader,
+                                                      aux_loader=aux_loader,
+                                                      dataset_name=args.dataset_name,
+                                                      lr=args.lr,
+                                                      momentum=args.momentum,
+                                                      weight_decay=args.weight_decay,
+                                                      amp=args.amp,
+                                                      client_id=args.current_client).to_client()
                            )
 
 

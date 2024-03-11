@@ -7,9 +7,9 @@ from NeVe.optimizer import NeVeOptimizer
 
 
 class FederatedNeVeOptimizer(NeVeOptimizer):
-    def __init__(self, model: nn.Module, velocity_momentum: float = 0.5, stop_threshold: float = 0.001,
+    def __init__(self, model: nn.Module, scheduler, velocity_momentum: float = 0.5, stop_threshold: float = 0.001,
                  activations_save_path: str = "../activations/", client_id: int = 0):
-        super().__init__(model, velocity_momentum=velocity_momentum, stop_threshold=stop_threshold)
+        super().__init__(model, scheduler, velocity_momentum=velocity_momentum, stop_threshold=stop_threshold)
         self._activations_save_path = activations_save_path
         self._client_id = client_id
 

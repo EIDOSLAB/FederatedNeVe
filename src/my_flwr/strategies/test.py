@@ -20,8 +20,20 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             "loss": sum(losses) / sum(examples), "lr": {}
         }
         for client_id, lr in zip(cids, lrs):
-            print(client_id, lr)
+            print("LR:", client_id, lr)
             aggregate_data["lr"][str(client_id)] = lr
+        # NeVe check:
+        is_neve_used = False
+        for num_examples, m in metrics:
+            if "neve_optimizer" in m.keys():
+                is_neve_used = True
+                break
+        if is_neve_used:
+            aggregate_data["neve_optimizer"] = {}
+            neve_datas = [m["neve_optimizer"] for _, m in metrics]
+            for client_id, neve_data in zip(cids, neve_datas):
+                print("Neve Data:", client_id, neve_data)
+                aggregate_data["neve_optimizer"][str(client_id)] = neve_data
     else:
         # Multiply accuracy of each client by number of examples used
         val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
@@ -57,6 +69,16 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
             "loss": aggregate_data["loss"]},
         "lr": {client_id: lr for client_id, lr in aggregate_data["lr"].items()}
     }
+    for _, client_data in metrics:
+        if "neve.continue_training" in client_data.keys():
+            if "neve" not in data_to_log.keys():
+                data_to_log["neve"] = {}
+            data_to_log["neve"][client_data["client_id"]] = {
+                "continue_training": client_data["neve.continue_training"],
+                "model_value": client_data["neve.model_value"],
+                "model_avg_value": client_data["neve.model_avg_value"],
+            }
+
     wandb.log(data_to_log, commit=False)
     return aggregate_data
 

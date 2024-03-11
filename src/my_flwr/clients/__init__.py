@@ -1,1 +1,1 @@
-from src.my_flwr.clients.cifar import CifarDefaultClient, CifarNeVeClient
+from src.my_flwr.clients.federated import FederatedDefaultClient, FederatedNeVeClient
