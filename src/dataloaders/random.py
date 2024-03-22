@@ -47,6 +47,6 @@ class RandomDataset(Dataset):
             self.images.append(img)
 
 
-def get_random_dataset(shape: tuple[int, int, int] = (3, 32, 32), number_samples: int = 10, seed: int = 0):
-    aux_dataset = RandomDataset(img_shape=shape, dataset_size=number_samples, seed=seed)
+def get_random_dataset(shape: tuple[int, int, int] = (3, 32, 32), number_samples: int = 10, aux_seed: int = 0):
+    aux_dataset = RandomDataset(img_shape=shape, dataset_size=number_samples, seed=aux_seed)
     return aux_dataset

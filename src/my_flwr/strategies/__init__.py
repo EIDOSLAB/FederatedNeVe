@@ -1,1 +1,1 @@
-from src.my_flwr.strategies.test import weighted_average_fit, weighted_average_eval
+from src.my_flwr.strategies.avg_aggregate import weighted_average_fit, weighted_average_eval

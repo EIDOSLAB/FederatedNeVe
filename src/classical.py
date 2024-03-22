@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import torch
+
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -31,7 +32,8 @@ def main(args):
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Load Data
-    train, test, aux = get_dataset(args.dataset_root, args.dataset_name, seed=args.seed, generate_aux_set=args.use_neve)
+    train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
+                                   aux_seed=args.seed, generate_aux_set=args.use_neve)
     train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=1,
                                                                        seed=args.seed, batch_size=args.batch_size)
     train_loader, val_loader = train_loaders[0], val_loaders[0]

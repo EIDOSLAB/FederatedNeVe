@@ -74,7 +74,7 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
             if "neve" not in data_to_log.keys():
                 data_to_log["neve"] = {}
             data_to_log["neve"][client_data["client_id"]] = {
-                "continue_training": client_data["neve.continue_training"],
+                "continue_training": 1 if client_data["neve.continue_training"] else 0,
                 "model_value": client_data["neve.model_value"],
                 "model_avg_value": client_data["neve.model_avg_value"],
             }

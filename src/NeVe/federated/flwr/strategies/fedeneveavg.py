@@ -51,7 +51,8 @@ class FedNeVeAvg(FedAvg):
 
         return super().aggregate_evaluate(server_round, results, failures)
 
-    def neve_results_check(self, results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
+    @staticmethod
+    def neve_results_check(results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
             list[tuple[ClientProxy, FitRes | EvaluateRes]]:
         cleaned_results = []
         if not evaluate:

@@ -1,12 +1,12 @@
+import os.path
 from collections import OrderedDict
 
 import flwr as fl
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from src.NeVe.scheduler import ReduceLROnLocalPlateau
 from src.NeVe.federated import FederatedNeVeOptimizer
+from src.NeVe.scheduler import ReduceLROnLocalPlateau
 from src.models import get_model
 from src.utils import get_optimizer, get_scheduler
 from src.utils.trainer import run
@@ -16,7 +16,7 @@ class FederatedDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
-                 client_id: int = "0"):
+                 client_id: int = 0):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.amp = amp
         self.epoch = 0
@@ -102,21 +102,29 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  aux_loader: DataLoader,
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
-                 client_id: int = "0",
-                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001):
+                 client_id: int = 0,
+                 neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
+                 use_disk: bool = False, neve_disk_folder: str = "../neve_data/"):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                          dataset_name=dataset_name, optimizer_name=optimizer_name,
                          lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
                          client_id=client_id)
 
         self.aux_loader = aux_loader
-        self.scheduler: FederatedNeVeOptimizer = FederatedNeVeOptimizer(self.model,
-                                                                        ReduceLROnLocalPlateau(self.optimizer),
-                                                                        velocity_momentum=neve_momentum,
-                                                                        stop_threshold=neve_epsilon,
-                                                                        client_id=client_id)
         self.is_neve_setupped = False
         self.continue_training = True
+        self.use_disk = use_disk
+        self.neve_disk_folder = neve_disk_folder
+
+        self.scheduler = FederatedNeVeOptimizer(self.model,
+                                                ReduceLROnLocalPlateau(self.optimizer,
+                                                                       factor=neve_alpha, patience=neve_delta),
+                                                velocity_momentum=neve_momentum,
+                                                stop_threshold=neve_epsilon,
+                                                save_path=self.neve_disk_folder,
+                                                client_id=client_id)
+        if self.use_disk:
+            self._load_from_disk()
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -130,12 +138,9 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.set_parameters(parameters)
         if not self.is_neve_setupped:
             # Get the velocity value before the training step (velocity at time t-1)
-            # TODO: UNDERSTAND WHEN WE NEED TO EVALUATE THE VELOCITY (WE HAVE MANY WEIGHTS UPDATES)
             with self.scheduler:
                 _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
-            # TODO: init_step=True should be done only the really first time we evaluate the velocity
             _ = self.scheduler.step(init_step=True)
-            # self.scheduler.save_activations()
             self.is_neve_setupped = True
 
         # Perform default fit step
@@ -143,8 +148,6 @@ class FederatedNeVeClient(FederatedDefaultClient):
             params, len_ds, train_logs = super().fit(parameters, config)
         else:
             return [], len(self.train_loader), {}
-        # load neve's activations
-        # self.scheduler.load_activations(self.device)
         # Get the velocity value after the training step (velocity at time t)
         with self.scheduler:
             _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
@@ -158,4 +161,42 @@ class FederatedNeVeClient(FederatedDefaultClient):
             self.continue_training = velocity_data.continue_training
         print(f"Client: {self.client_id} - Model Avg. Velocity: {train_logs['neve.model_avg_value']}")
         print(f"Client: {self.client_id} - Continue training? {self.continue_training}")
+        if self.use_disk:
+            self._save_into_disk()
         return params, len_ds, train_logs
+
+    def _get_client_checkpoint_path(self):
+        return os.path.join(self.neve_disk_folder, f"client_{self.client_id}_state.pt")
+
+    def _save_into_disk(self):
+        self.scheduler.save_activations()
+        torch.save(
+            {
+                "epoch": self.epoch,
+                "scheduler_state": self.scheduler._scheduler.state_dict(),
+                "neve_velocity_cache": self.scheduler._velocity_cache,
+                "optimizer_state": self.optimizer.state_dict(),
+                "scaler_state": self.scaler.state_dict(),
+                "is_neve_setupped": self.is_neve_setupped,
+                "continue_training": self.continue_training,
+            },
+            self._get_client_checkpoint_path()
+        )
+
+    def _load_from_disk(self):
+        if not os.path.exists(self.neve_disk_folder):
+            os.makedirs(self.neve_disk_folder)
+            os.makedirs(os.path.join(self.neve_disk_folder, "activations"))
+
+        if not os.path.exists(self._get_client_checkpoint_path()):
+            return
+
+        self.scheduler.load_activations(self.device)
+        checkpoint = torch.load(self._get_client_checkpoint_path())
+        self.epoch = checkpoint["epoch"]
+        self.optimizer.load_state_dict(checkpoint["optimizer_state"])
+        self.scaler.load_state_dict(checkpoint["scaler_state"])
+        self.is_neve_setupped = checkpoint["is_neve_setupped"]
+        self.continue_training = checkpoint["continue_training"]
+        self.scheduler._scheduler.load_state_dict(checkpoint["scheduler_state"])
+        self.scheduler._velocity_cache = checkpoint["neve_velocity_cache"]

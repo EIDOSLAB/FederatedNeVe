@@ -40,7 +40,7 @@ class ReduceLROnLocalPlateau(object):
     """
 
     def __init__(self, optimizer, mode='min', factor=0.5, patience=10,
-                 threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-8, verbose=False):
+                 threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-8, starting_lr=0.1, verbose=False):
 
         if factor >= 1.0:
             raise ValueError('Factor should be < 1.0.')
@@ -72,6 +72,7 @@ class ReduceLROnLocalPlateau(object):
         self.mode_worse = None  # the worse value for the chosen mode
         self.eps = eps
         self.last_epoch = 0
+        self.current_lr = [starting_lr for _ in enumerate(self.optimizer.param_groups)]
         self._init_is_better(mode=mode, threshold=self.threshold, threshold_mode=threshold_mode)
         self._reset()
 
@@ -107,11 +108,16 @@ class ReduceLROnLocalPlateau(object):
         for i, param_group in enumerate(self.optimizer.param_groups):
             old_lr = float(param_group['lr'])
             new_lr = max(old_lr * self.factor, self.min_lrs[i])
-            if old_lr - new_lr > self.eps:
-                param_group['lr'] = new_lr
-                if self.verbose:
-                    epoch_str = ("%.2f" if isinstance(epoch, float) else "%.5d") % epoch
-                    print(f"Epoch {epoch_str}: reducing learning rate of group {i} to {new_lr:.4e}.")
+            self._update_lr((i, param_group), old_lr, new_lr, epoch)
+
+    def _update_lr(self, opt_data, old_lr, new_lr, epoch):
+        i, param_group = opt_data
+        if old_lr - new_lr > self.eps:
+            self.current_lr[i] = new_lr
+            param_group['lr'] = new_lr
+            if self.verbose:
+                epoch_str = ("%.2f" if isinstance(epoch, float) else "%.5d") % epoch
+                print(f"Epoch {epoch_str}: reducing learning rate of group {i} to {new_lr:.4e}.")
 
     @property
     def in_cooldown(self):
@@ -153,3 +159,8 @@ class ReduceLROnLocalPlateau(object):
     def load_state_dict(self, state_dict):
         self.__dict__.update(state_dict)
         self._init_is_better(mode=self.mode, threshold=self.threshold, threshold_mode=self.threshold_mode)
+        # Update opt state
+        print("Load state dict, LRs:", self.current_lr)
+        for i, param_group in enumerate(self.optimizer.param_groups):
+            old_lr = float(param_group['lr'])
+            self._update_lr((i, param_group), old_lr, self.current_lr[i], -1)
