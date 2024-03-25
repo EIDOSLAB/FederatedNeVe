@@ -1,1 +1,0 @@
-from NeVe.federated.optimizer.optimizer import FederatedNeVeOptimizer

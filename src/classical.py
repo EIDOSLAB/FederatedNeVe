@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import torch
-
 import wandb
 
 FILE = Path(__file__).resolve()
@@ -18,7 +17,7 @@ from src.dataloaders import get_dataset, prepare_data
 from src.models import get_model
 from src.utils import set_seeds, get_optimizer, get_scheduler
 from src.utils.trainer import train_epoch, run
-from src.NeVe import NeVeOptimizer
+from src.NeVe.scheduler import NeVeScheduler
 
 
 def main(args):
@@ -50,7 +49,7 @@ def main(args):
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
 
     # NeVe init
-    if args.use_neve and "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeOptimizer):
+    if args.use_neve and "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeScheduler):
         with scheduler:
             _ = run(model, data_loaders["aux"], None, scaler, args.device, args.amp, -1, "Aux")
         _ = scheduler.step(init_step=True)

@@ -5,9 +5,9 @@ import shutil
 import sys
 from pathlib import Path
 
-import flwr as fl
 import torch
-import wandb
+
+from models import get_model
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent
@@ -18,9 +18,7 @@ if str(ROOT) not in sys.path:
 from src.arguments import get_args
 from src.dataloaders import get_dataset, prepare_data, load_aux_dataset
 from src.my_flwr.clients import get_client
-from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.utils import set_seeds
-from src.NeVe.federated.flwr.strategies import FedNeVeAvg
 
 dataset_name = ""
 train_loaders, val_loaders, test_loader, aux_loaders = None, None, None, None
@@ -49,7 +47,7 @@ def client_fn(cid: str):
     return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name, client_id=int(cid),
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
-                      use_neve=use_neve, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder).to_client()
+                      use_neve=use_neve, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder)
 
 
 def main(args):
@@ -81,33 +79,15 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Performing training on:", device)
 
-    client_resources = None
-    if "cuda" in device.type:
-        client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
+    model = get_model(dataset=dataset_name, device=str(args.device))
 
-    # Init wandb project
-    # TODO REMOVE COMMENT
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
+    for epoch in range(args.epochs):
+        client = client_fn(0)
+        client.epoch = epoch
+        res_train = client.fit([value for _, value in model.state_dict().items()], {})
+        res_eval = client.evaluate([value for _, value in model.state_dict().items()], {})
 
-    # Select strategy
-    strategy = FedNeVeAvg if args.use_neve else fl.server.strategy.FedAvg
-
-    # Launch the simulation
-    hist = fl.simulation.start_simulation(
-        client_fn=client_fn,  # A function to run a _virtual_ client when required
-        num_clients=args.num_clients,  # Total number of clients available
-        config=fl.server.ServerConfig(num_rounds=args.epochs),  # Specify number of FL rounds
-        strategy=strategy(fit_metrics_aggregation_fn=weighted_average_fit,
-                          min_fit_clients=args.num_clients,
-                          min_evaluate_clients=args.num_clients,
-                          min_available_clients=args.num_clients,
-                          evaluate_metrics_aggregation_fn=weighted_average_eval),
-        client_resources=client_resources,
-    )
     # Save model...
-
-    # End wandb run
-    wandb.run.finish()
 
 
 if __name__ == "__main__":

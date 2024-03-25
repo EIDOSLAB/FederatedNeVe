@@ -3,7 +3,7 @@ import time
 
 import torch
 
-from src.NeVe import NeVeOptimizer
+from src.NeVe.scheduler import NeVeScheduler
 from src.NeVe.utils.data import NeVeData
 from src.utils.metrics import Accuracy, AverageMeter
 
@@ -14,7 +14,7 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
     # Training phase
     if "train" in data_loaders.keys() and data_loaders["train"]:
         epoch_logs["train"] = run(model, data_loaders["train"], optimizer, grad_scaler, device, amp, epoch, "Train")
-        if not isinstance(scheduler, NeVeOptimizer):
+        if not isinstance(scheduler, NeVeScheduler):
             scheduler.step()
 
     # Validation phase
@@ -27,10 +27,10 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
 
     # NeVe phase
     neve_data = None
-    if "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeOptimizer):
+    if "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeScheduler):
         with scheduler:
             _ = run(model, data_loaders["aux"], None, grad_scaler, device, amp, epoch, "Aux")
-        neve_data: NeVeData = scheduler.step(init_step=False)
+        neve_data = scheduler.step(init_step=False)
         if neve_data:
             epoch_logs["aux"] = neve_data.as_dict
 

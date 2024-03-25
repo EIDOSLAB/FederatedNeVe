@@ -7,8 +7,7 @@ from torch import nn
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import MultiStepLR
 
-from src.NeVe import NeVeOptimizer
-from src.NeVe.scheduler import ReduceLROnLocalPlateau
+from src.NeVe.scheduler import ReduceLROnLocalPlateau, NeVeScheduler
 
 
 def set_seeds(seed):
@@ -37,7 +36,7 @@ def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 
 
 def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True, dataset: str = "cifar10"):
     if use_neve:
-        return NeVeOptimizer(model, scheduler=ReduceLROnLocalPlateau(optimizer))
+        return NeVeScheduler(model, lr_scheduler=ReduceLROnLocalPlateau(optimizer))
 
     match dataset.lower():
         case "emnist":
