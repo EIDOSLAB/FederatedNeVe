@@ -20,7 +20,7 @@ from src.dataloaders import get_dataset, prepare_data, load_aux_dataset
 from src.my_flwr.clients import get_client
 from src.utils import set_seeds
 
-dataset_name = ""
+dataset_name, use_groupnorm = "", True
 train_loaders, val_loaders, test_loader, aux_loaders = None, None, None, None
 
 use_neve, neve_use_disk = True, True
@@ -44,7 +44,8 @@ def client_fn(cid: str):
     weight_decay = args.weight_decay,
     amp = args.amp,
     """
-    return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name, client_id=int(cid),
+    return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name,
+                      use_groupnorm=use_groupnorm, client_id=int(cid),
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
                       use_neve=use_neve, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder)
@@ -52,7 +53,7 @@ def client_fn(cid: str):
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
-    global dataset_name, train_loaders, val_loaders, test_loader, aux_loaders
+    global dataset_name, use_groupnorm, train_loaders, val_loaders, test_loader, aux_loaders
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta
     global use_neve, neve_use_disk
     neve_epsilon = args.neve_epsilon
@@ -60,6 +61,7 @@ def main(args):
     neve_alpha = args.neve_alpha
     neve_delta = args.neve_delta
     dataset_name = args.dataset_name.lower()
+    use_groupnorm = args.model_use_groupnorm
     use_neve = args.use_neve
     neve_use_disk = True
     # Cleanup neve_disk_folder

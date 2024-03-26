@@ -31,12 +31,12 @@ def main(args):
     del train_loaders, val_loaders, train, test, aux
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,
+                        use_groupnorm=args.model_use_groupnorm,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
                         client_id=args.current_client, use_neve=args.use_neve, neve_use_disk=False)
-    fl.client.start_client(server_address=args.server_address,
-                           client=client.to_client())
+    fl.client.start_client(server_address=args.server_address, client=client.to_client())
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from torch.nn import Module, GroupNorm
 from torchvision.models import resnet18, ResNet
 
 
-def get_resnet_model(num_classes: int = 10) -> Module:
+def get_resnet_model(num_classes: int = 10, use_groupnorm=False) -> Module:
     """Generates ResNet18 model using GroupNormalization rather than
     BatchNormalization. Two groups are used.
 
@@ -12,7 +12,10 @@ def get_resnet_model(num_classes: int = 10) -> Module:
     Returns:
         Module: ResNet18 network.
     """
-    model: ResNet = resnet18(
-        norm_layer=lambda x: GroupNorm(2, x), num_classes=num_classes
-    )
+    if use_groupnorm:
+        model: ResNet = resnet18(
+            norm_layer=lambda x: GroupNorm(2, x), num_classes=num_classes
+        )
+    else:
+        model: ResNet = resnet18()
     return model

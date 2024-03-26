@@ -20,6 +20,8 @@ def _get_default_arguments(parser):
                         help="Device type.")
     parser.add_argument("--model-name", type=str, default="resnet18",
                         help="Name of the model to train.")
+    parser.add_argument("--model-use-groupnorm", type=int2bool, choices=[0, 1], default=True,
+                        help="Use groupnorm rather than layernorm/batchnorm in the model")
     parser.add_argument("--optimizer", type=str, choices=["sgd", "adam"], default="sgd",
                         help="Optimizer name.")
     parser.add_argument("--batch-size", type=int, default=32,
