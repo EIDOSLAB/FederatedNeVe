@@ -81,7 +81,9 @@ def run(model, dataloader, optimizer, scaler, device, amp, epoch, run_type):
         print(f"{run_type}: [{epoch}][{batch + 1}/{len(dataloader)}]:\t"
               f"BT {batch_time.avg:.3f}\t"
               f"ETA {datetime.timedelta(seconds=eta)}\t"
-              f"loss {loss_meter.avg:.3f}\t")
+              f"Accuracy {accuracy_meter_1.avg:.3f}\t"
+              f"batch loss {loss.item():.3f}\t"
+              f"cumulative loss {loss_meter.avg:.3f}\t")
     return {
         'loss': loss_meter.avg,
         'accuracy': {
