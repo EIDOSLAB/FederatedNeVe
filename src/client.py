@@ -22,7 +22,7 @@ def main(args):
     set_seeds(args.seed)
     # Load data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
-                                   aux_seed=args.current_client, generate_aux_set=args.use_neve)
+                                   aux_seed=args.current_client, generate_aux_set=args.scheduler_name == "neve")
     train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=args.num_clients,
                                                                        seed=args.seed, batch_size=args.batch_size)
     # Memory optimization
@@ -35,7 +35,7 @@ def main(args):
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
-                        client_id=args.current_client, use_neve=args.use_neve, neve_use_disk=False)
+                        client_id=args.current_client, use_neve=args.scheduler_name == "neve", neve_use_disk=False)
     fl.client.start_client(server_address=args.server_address, client=client.to_client())
 
 

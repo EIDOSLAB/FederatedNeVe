@@ -28,7 +28,7 @@ def _get_default_arguments(parser):
                         help="Batch size, an higher value requires more memory.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
-    parser.add_argument("--lr", type=float, default=0.1,
+    parser.add_argument("--lr", type=float, default=0.01,
                         help="Optimizer starting learning rate.")
     parser.add_argument("--momentum", type=float, default=0.9,
                         help="Optimizer momentum.")
@@ -43,8 +43,8 @@ def _get_default_arguments(parser):
                         help="Dataset folder name.")
     # NeVe
     parser = add_neve_arguments(parser)
-    parser.add_argument("--use-neve", type=int2bool, choices=[0, 1], default=True,
-                        help="NeVe - If True use NeVe scheduler. Otherwise use MultiStepLR.")
+    parser.add_argument("--scheduler-name", type=str, choices=["neve", "baseline"], default="baseline",
+                        help="'neve' use NeVe scheduler. 'baseline' use use MultiStepLR.")
 
     # Wandb
     parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")

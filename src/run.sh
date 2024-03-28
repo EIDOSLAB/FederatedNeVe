@@ -2,7 +2,7 @@
 
 # Parametri per il server
 params="--amp 1 --device cuda --batch-size 256 --epochs 90"
-use_neve="--use-neve 0"
+scheduler="--scheduler-name baseline"
 seed="--seed 0"
 dataset="--dataset-name emnist"
 model="--model-name resnet18"
@@ -33,8 +33,8 @@ do
     else
         gpu_id=1
     fi
-    echo "Avvio del client $i con parametri: $params $use_neve $clients $seed $dataset --current-client $i, sulla GPU: $gpu_id"
-    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $use_neve $clients $seed $dataset $model "--current-client" $i &
+    echo "Avvio del client $i con parametri: $params $scheduler $clients $seed $dataset --current-client $i, sulla GPU: $gpu_id"
+    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $scheduler $clients $seed $dataset $model "--current-client" $i &
 done
 
 # Attendi che tutti i processi dei client siano completati

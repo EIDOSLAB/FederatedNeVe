@@ -27,12 +27,12 @@ def main(args):
     model = get_model(dataset=args.dataset_name, device=args.device, use_groupnorm=args.model_use_groupnorm)
     optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay)
-    scheduler = get_scheduler(model, optimizer=optimizer, use_neve=args.use_neve, dataset=args.dataset_name)
+    scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name)
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Load Data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
-                                   aux_seed=args.seed, generate_aux_set=args.use_neve)
+                                   aux_seed=args.seed, generate_aux_set=args.scheduler_name == "neve")
     train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=1,
                                                                        seed=args.seed, batch_size=args.batch_size)
     train_loader, val_loader = train_loaders[0], val_loaders[0]
@@ -49,7 +49,8 @@ def main(args):
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
 
     # NeVe init
-    if args.use_neve and "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeScheduler):
+    if args.scheduler_name == "neve" and "aux" in data_loaders.keys() and data_loaders["aux"] and \
+            isinstance(scheduler, NeVeScheduler):
         with scheduler:
             _ = run(model, data_loaders["aux"], None, scaler, args.device, args.amp, -1, "Aux")
         _ = scheduler.step(init_step=True)
@@ -64,7 +65,7 @@ def main(args):
         print(f"Train: {logs['train']}")
         print(f"Val: {logs['val']}")
         print(f"Test: {logs['test']}")
-        if args.use_neve and 'aux' in logs.keys():
+        if args.scheduler_name == "neve" and 'aux' in logs.keys():
             print(f"Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
         print("-----\n")
         if neve_data and not neve_data.continue_training:

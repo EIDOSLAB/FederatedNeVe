@@ -25,7 +25,7 @@ def main(args):
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
     # Select strategy
-    strategy = FedNeVeAvg if args.use_neve else FedAvg
+    strategy = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
     # Start server
     fl.server.start_server(server_address=args.server_address,
                            config=fl.server.ServerConfig(num_rounds=args.epochs),

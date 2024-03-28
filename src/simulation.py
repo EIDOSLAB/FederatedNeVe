@@ -64,7 +64,7 @@ def main(args):
     neve_delta = args.neve_delta
     dataset_name = args.dataset_name.lower()
     use_groupnorm = args.model_use_groupnorm
-    use_neve = args.use_neve
+    use_neve = args.scheduler_name == "neve"
     neve_use_disk = True
     # Cleanup neve_disk_folder
     if os.path.exists(neve_disk_folder):
@@ -92,7 +92,7 @@ def main(args):
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
 
     # Select strategy
-    strategy = FedNeVeAvg if args.use_neve else fl.server.strategy.FedAvg
+    strategy = FedNeVeAvg if args.scheduler_name == "neve" else fl.server.strategy.FedAvg
 
     # Launch the simulation
     hist = fl.simulation.start_simulation(

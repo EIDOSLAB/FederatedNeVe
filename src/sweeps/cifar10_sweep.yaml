@@ -18,6 +18,8 @@ parameters:
     values: [ 1 ]
   device:
     values: [ "cuda" ]
+  lr:
+    values: [ 0.01 ]
   batch-size:
     values: [ 100 ]
   epochs:
@@ -28,7 +30,7 @@ parameters:
     values: [ "cifar10" ]
   model-name:
     values: [ "resnet18" ]
+  scheduler-name:
+    values: [ "baseline", "neve" ]
   model-use-groupnorm:
-    values: [ 0, 1 ]
-  use-neve:
     values: [ 0, 1 ]

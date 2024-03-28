@@ -34,8 +34,9 @@ def get_optimizer(model: nn.Module, opt_name: str = "sgd", starting_lr: float = 
     return optim
 
 
-def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, use_neve: bool = True, dataset: str = "cifar10"):
-    if use_neve:
+def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, scheduler_name: str = "neve",
+                  dataset: str = "cifar10"):
+    if scheduler_name == "neve":
         return NeVeScheduler(model, lr_scheduler=ReduceLROnLocalPlateau(optimizer))
 
     match dataset.lower():
