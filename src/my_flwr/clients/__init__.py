@@ -8,7 +8,8 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
                client_id: int = 0,
                neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
-               use_neve: bool = False, neve_use_disk: bool = False, neve_disk_folder="../neve_data/"):
+               scheduler_name: str = "baseline", neve_use_disk: bool = False, neve_disk_folder="../neve_data/"):
+    use_neve = scheduler_name == "neve"
     if use_neve:
         return FederatedNeVeClient(train_loader=train_loader, valid_loader=val_loader, test_loader=test_loader,
                                    aux_loader=aux_loader,

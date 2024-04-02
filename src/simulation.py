@@ -25,7 +25,7 @@ from src.NeVe.federated.flwr.strategies import FedNeVeAvg
 dataset_name, use_groupnorm = "", True
 train_loaders, val_loaders, test_loader, aux_loaders = None, None, None, None
 
-use_neve, neve_use_disk = True, True
+scheduler_name, neve_use_disk = "baseline", True
 neve_disk_folder = os.path.join("../neve_data/")
 neve_momentum, neve_epsilon, neve_alpha, neve_delta = 0.5, 1e-3, 0.5, 10
 
@@ -50,21 +50,21 @@ def client_fn(cid: str):
                       use_groupnorm=use_groupnorm, client_id=int(cid),
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
-                      use_neve=use_neve, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder).to_client()
+                      scheduler_name=scheduler_name, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder).to_client()
 
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global dataset_name, use_groupnorm, train_loaders, val_loaders, test_loader, aux_loaders
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta
-    global use_neve, neve_use_disk
+    global scheduler_name, neve_use_disk
     neve_epsilon = args.neve_epsilon
     neve_momentum = args.neve_momentum
     neve_alpha = args.neve_alpha
     neve_delta = args.neve_delta
     dataset_name = args.dataset_name.lower()
     use_groupnorm = args.model_use_groupnorm
-    use_neve = args.scheduler_name == "neve"
+    scheduler_name = args.scheduler_name
     neve_use_disk = True
     # Cleanup neve_disk_folder
     if os.path.exists(neve_disk_folder):

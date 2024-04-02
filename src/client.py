@@ -35,7 +35,7 @@ def main(args):
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
-                        client_id=args.current_client, use_neve=args.scheduler_name == "neve", neve_use_disk=False)
+                        client_id=args.current_client, scheduler_name=args.scheduler_name, neve_use_disk=False)
     fl.client.start_client(server_address=args.server_address, client=client.to_client())
 
 

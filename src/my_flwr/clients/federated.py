@@ -16,7 +16,7 @@ class FederatedDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd", use_groupnorm: bool = True,
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
-                 client_id: int = 0):
+                 scheduler_name: str = "baseline", client_id: int = 0):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.amp = amp
         self.epoch = 0
@@ -30,7 +30,8 @@ class FederatedDefaultClient(fl.client.NumPyClient):
         self.weight_decay = weight_decay
         self.optimizer = get_optimizer(self.model, opt_name=optimizer_name, starting_lr=self.lr,
                                        momentum=self.momentum, weight_decay=self.weight_decay)
-        self.scheduler = get_scheduler(self.model, optimizer=self.optimizer, use_neve=False, dataset=dataset_name)
+        self.scheduler = get_scheduler(self.model, optimizer=self.optimizer, scheduler_name=scheduler_name,
+                                       dataset=dataset_name)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(self.device == "cuda" and self.amp))
 
     def get_parameters(self, config):
@@ -102,13 +103,13 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  aux_loader: DataLoader,
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd", use_groupnorm: bool = True,
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
-                 client_id: int = 0,
+                 scheduler_name: str = "neve", client_id: int = 0,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
                  use_disk: bool = False, neve_disk_folder: str = "../neve_data/"):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                          dataset_name=dataset_name, optimizer_name=optimizer_name, use_groupnorm=use_groupnorm,
                          lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
-                         client_id=client_id)
+                         scheduler_name=scheduler_name, client_id=client_id)
 
         self.aux_loader = aux_loader
         self.is_neve_setupped = False
