@@ -31,6 +31,8 @@ parameters:
   model-name:
     values: [ "resnet18" ]
   scheduler-name:
-    values: [ "baseline", "neve" ]
+    values: [ "baseline" ]
   model-use-groupnorm:
-    values: [ 0, 1 ]
+    values: [ 1 ]
+  model-groupnorm-groups:
+    values: [ 1, 2, 4, 8, 16, 32, -1]

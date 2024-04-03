@@ -14,13 +14,15 @@ from src.utils.trainer import run
 
 class FederatedDefaultClient(fl.client.NumPyClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
-                 dataset_name: str = "cifar10", optimizer_name: str = "sgd", use_groupnorm: bool = True,
+                 use_groupnorm: bool = True, groupnorm_channels: int = 2,
+                 dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
                  scheduler_name: str = "baseline", client_id: int = 0):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.amp = amp
         self.epoch = 0
-        self.model = get_model(dataset=dataset_name, device=str(self.device), use_groupnorm=use_groupnorm)
+        self.model = get_model(dataset=dataset_name, device=str(self.device), use_groupnorm=use_groupnorm,
+                               groupnorm_channels=groupnorm_channels)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader
@@ -101,13 +103,15 @@ class FederatedDefaultClient(fl.client.NumPyClient):
 class FederatedNeVeClient(FederatedDefaultClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
                  aux_loader: DataLoader,
-                 dataset_name: str = "cifar10", optimizer_name: str = "sgd", use_groupnorm: bool = True,
+                 use_groupnorm: bool = True, groupnorm_channels: int = 2,
+                 dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
                  scheduler_name: str = "neve", client_id: int = 0,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
                  use_disk: bool = False, neve_disk_folder: str = "../neve_data/"):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
-                         dataset_name=dataset_name, optimizer_name=optimizer_name, use_groupnorm=use_groupnorm,
+                         use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                         dataset_name=dataset_name, optimizer_name=optimizer_name,
                          lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
                          scheduler_name=scheduler_name, client_id=client_id)
 

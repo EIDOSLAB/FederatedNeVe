@@ -22,6 +22,8 @@ def _get_default_arguments(parser):
                         help="Name of the model to train.")
     parser.add_argument("--model-use-groupnorm", type=int2bool, choices=[0, 1], default=True,
                         help="Use groupnorm rather than layernorm/batchnorm in the model")
+    parser.add_argument("--model-groupnorm-groups", type=int, default=2,
+                        help="Number of Groups to use in the GroupNorm. Default 2, select -1 to use all.")
     parser.add_argument("--optimizer", type=str, choices=["sgd", "adam"], default="sgd",
                         help="Optimizer name.")
     parser.add_argument("--batch-size", type=int, default=32,

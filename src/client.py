@@ -31,7 +31,7 @@ def main(args):
     del train_loaders, val_loaders, train, test, aux
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,
-                        use_groupnorm=args.model_use_groupnorm,
+                        use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,

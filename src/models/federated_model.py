@@ -3,7 +3,7 @@ from torch.nn import Module
 from torchvision.models import resnet18, ResNet
 
 
-def get_resnet_model(num_classes: int = 10, use_groupnorm: bool = False) -> Module:
+def get_resnet_model(num_classes: int = 10, use_groupnorm: bool = False, groupnorm_channels: int = 2) -> Module:
     """Generates ResNet18 model using GroupNormalization rather than
     BatchNormalization. Two groups are used.
 
@@ -16,15 +16,16 @@ def get_resnet_model(num_classes: int = 10, use_groupnorm: bool = False) -> Modu
     """
     model: ResNet = resnet18(num_classes=num_classes)
     if use_groupnorm:
-        model = batch_norm_to_group_norm(model)
+        model = batch_norm_to_group_norm(model, groupnorm_channels)
     return model
 
 
-def batch_norm_to_group_norm(layer):
+def batch_norm_to_group_norm(layer, groupnorm_channels: int = 2):
     """Iterates over a whole model (or layer of a model) and replaces every batch norm 2D with a group norm
 
     Args:
         layer: model or one layer of a model like resnet34.layer1 or Sequential(), ...
+        groupnorm_channels: number of channels to use in the GroupNorm
     """
     for name, module in layer.named_modules():
         if name:
@@ -33,8 +34,13 @@ def batch_norm_to_group_norm(layer):
                 sub_layer = getattr(layer, name)
                 if isinstance(sub_layer, torch.nn.BatchNorm2d):
                     num_channels = sub_layer.num_features
+                    # Make sure to have at least 1 channel and less or equal to num_channels
+                    input_channels = max(min(groupnorm_channels, num_channels), 1)
+                    # If the number of channels to use is -1, then use all the available channels
+                    if groupnorm_channels == -1:
+                        input_channels = num_channels
                     # first level of current layer or model contains a batch norm --> replacing.
-                    layer._modules[name] = torch.nn.GroupNorm(2, num_channels)
+                    layer._modules[name] = torch.nn.GroupNorm(input_channels, num_channels)
             except AttributeError:
                 # go deeper: set name to layer1, getattr will return layer1 --> call this func again
                 name = name.split(".")[0]

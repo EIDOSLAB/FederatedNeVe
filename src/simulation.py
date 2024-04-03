@@ -22,7 +22,7 @@ from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.utils import set_seeds
 from src.NeVe.federated.flwr.strategies import FedNeVeAvg
 
-dataset_name, use_groupnorm = "", True
+dataset_name, use_groupnorm, groupnorm_channels = "", True, 2
 train_loaders, val_loaders, test_loader, aux_loaders = None, None, None, None
 
 scheduler_name, neve_use_disk = "baseline", True
@@ -46,16 +46,18 @@ def client_fn(cid: str):
     weight_decay = args.weight_decay,
     amp = args.amp,
     """
-    return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name,
-                      use_groupnorm=use_groupnorm, client_id=int(cid),
+    return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name=dataset_name,
+                      use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                      client_id=int(cid),
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
-                      scheduler_name=scheduler_name, neve_use_disk=neve_use_disk, neve_disk_folder=neve_disk_folder).to_client()
+                      scheduler_name=scheduler_name, neve_use_disk=neve_use_disk,
+                      neve_disk_folder=neve_disk_folder).to_client()
 
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
-    global dataset_name, use_groupnorm, train_loaders, val_loaders, test_loader, aux_loaders
+    global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta
     global scheduler_name, neve_use_disk
     neve_epsilon = args.neve_epsilon
@@ -64,6 +66,7 @@ def main(args):
     neve_delta = args.neve_delta
     dataset_name = args.dataset_name.lower()
     use_groupnorm = args.model_use_groupnorm
+    groupnorm_channels = args.model_groupnorm_groups
     scheduler_name = args.scheduler_name
     neve_use_disk = True
     # Cleanup neve_disk_folder
