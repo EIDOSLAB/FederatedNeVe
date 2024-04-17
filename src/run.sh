@@ -36,7 +36,7 @@ do
     for ((i=0; i<num_clients; i+=1))
     do
         # Se siamo singola gpu imposto a 0
-        if [ $single_gpu -eq 1]; then
+        if [ $single_gpu -eq 1 ]; then
             gpu_id=0
         # Altrimenti distribuisco i clients fra le 2 GPU
         else
