@@ -9,7 +9,8 @@ def get_resnet_model(num_classes: int = 10, use_groupnorm: bool = False, groupno
 
     Args:
         num_classes (int, optional): Number of classes. Defaults to 10.
-        use_groupnorm (bool): True if we want to use GroupNorm rather than BatchNorm2d
+        use_groupnorm (bool, optional): True if we want to use GroupNorm rather than BatchNorm2d
+        groupnorm_channels (int, optional): Number of channels used to split data-channels from the GroupNorm
 
     Returns:
         Module: ResNet18 network.

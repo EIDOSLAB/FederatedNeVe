@@ -16,4 +16,6 @@ def add_neve_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
                         help="NeVe - Scheduler rescaling factor.")
     parser.add_argument("--neve-delta", type=int, default=10,
                         help="NeVe - Scheduler epochs of patience.")
+    parser.add_argument("--neve-only-ll", type=_int2bool, choices=[0, 1], default=False,
+                        help="NeVe - Hooks only for the last layer or whole model.")
     return parser

@@ -28,7 +28,8 @@ def main(args):
                       groupnorm_channels=args.model_groupnorm_groups)
     optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay)
-    scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name)
+    scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name,
+                              neve_only_last_layer=args.neve_only_ll)
     scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
 
     # Load Data

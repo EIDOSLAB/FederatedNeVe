@@ -4,7 +4,7 @@
 # config.yaml è questo config
 
 program: classical.py
-name: "cifar10 - classical - baseline"
+name: "cifar10 - classical - baseline - GroupNorm Analysis"
 command:
   - ${env}
   - python3
@@ -35,4 +35,4 @@ parameters:
   model-use-groupnorm:
     values: [ 1 ]
   model-groupnorm-groups:
-    values: [ 1, 2, 4, 8, 16, 32, -1]
+    values: [ 1, 2, 4, 8, 16, 32, -1 ]

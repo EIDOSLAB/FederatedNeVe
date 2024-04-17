@@ -3,7 +3,7 @@ import torch.nn as nn
 from src.models.federated_model import get_resnet_model
 
 
-def get_model(dataset="cifar10", device: str = "cpu", use_groupnorm=True, groupnorm_channels: int = 2) -> nn.Module:
+def get_model(dataset="cifar10", device: str = "cuda", use_groupnorm=True, groupnorm_channels: int = 2) -> nn.Module:
     match (dataset.lower()):
         case "emnist":
             num_classes = 37  # 10 digits, 26 letters + 1: "N/A"

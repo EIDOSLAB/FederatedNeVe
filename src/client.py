@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import flwr as fl
+import torch
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent
@@ -29,13 +30,15 @@ def main(args):
     train_loader = train_loaders[args.current_client]
     val_loader = val_loaders[args.current_client]
     del train_loaders, val_loaders, train, test, aux
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if args.device == "cuda" else "cpu"
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,
                         use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
-                        neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
+                        neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon, device=device,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
-                        client_id=args.current_client, scheduler_name=args.scheduler_name, neve_use_disk=False)
+                        neve_only_last_layer=args.neve_only_ll,
+                        client_id=args.current_client, scheduler_name=args.scheduler_name, use_disk=False)
     fl.client.start_client(server_address=args.server_address, client=client.to_client())
 
 

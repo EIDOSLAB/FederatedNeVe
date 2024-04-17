@@ -253,3 +253,7 @@ fabric.properties
 # Datasets
 *datasets/
 *activations/
+
+# Pytorch tensor
+*.pt
+*.pth

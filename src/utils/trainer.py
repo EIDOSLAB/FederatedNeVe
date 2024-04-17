@@ -37,7 +37,8 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
     return epoch_logs, neve_data
 
 
-def run(model, dataloader, optimizer, scaler, device, amp, epoch, run_type):
+def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp: bool = True,
+        epoch: int = 0, run_type: str = "Train"):
     acc = Accuracy((1, 5))
 
     accuracy_meter_1 = AverageMeter()
