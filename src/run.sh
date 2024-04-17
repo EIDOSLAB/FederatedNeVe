@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# Parametri per il server
-params="--amp 1 --device cuda --batch-size 256 --epochs 90"
-scheduler="--scheduler-name baseline"
+# Parametri per il server ed i clients
+params="--amp 1 --device cuda --batch-size 100 --epochs 250 --lr 0.01"
+optimizer="--optimizer sgd"
+scheduler="--scheduler-name neve"
+neve_only_ll="--neve-only-ll 1"
+model_use_groupnorm="--model-use-groupnorm 1"
 seed="--seed 0"
-dataset="--dataset-name emnist"
+dataset="--dataset-name cifar10"
 model="--model-name resnet18"
 
 # Numero di clients da avviare
@@ -12,13 +15,13 @@ num_clients=20
 clients="--num-clients $num_clients"
 
 # Avvia il server
-echo "Avvio del server con parametri: $params $clients $seed $dataset $model"
-python server.py $params $use_neve $clients $seed $dataset $model &
+echo "Avvio del server con parametri: $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model"
+python server.py $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model &
 
 # Ottieni l'ID del processo del server
 server_pid=$!
 
-# Aspettiamo che il server parta prima di far partire i processi figli (10 secondi dovrebbero piu che bastare)
+# Aspettiamo che il server parta prima di far partire i processi figli (10 secondi dovrebbero bastare)
 sleep 10
 
 # Loop per avviare i clients
@@ -33,8 +36,8 @@ do
     else
         gpu_id=1
     fi
-    echo "Avvio del client $i con parametri: $params $scheduler $clients $seed $dataset --current-client $i, sulla GPU: $gpu_id"
-    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $scheduler $clients $seed $dataset $model "--current-client" $i &
+    echo "Avvio del client $i con parametri: $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model --current-client $i, sulla GPU: $gpu_id"
+    CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model "--current-client" $i &
 done
 
 # Attendi che tutti i processi dei client siano completati

@@ -83,8 +83,8 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
               f"BT {batch_time.avg:.3f}\t"
               f"ETA {datetime.timedelta(seconds=eta)}\t"
               f"Accuracy {accuracy_meter_1.avg:.3f}\t"
-              f"batch loss {loss.item():.3f}\t"
-              f"cumulative loss {loss_meter.avg:.3f}\t")
+              f"Batch Loss {loss.item():.3f}\t"
+              f"Cumulative Loss {loss_meter.avg:.3f}\t")
     return {
         'loss': loss_meter.avg,
         'accuracy': {
