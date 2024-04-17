@@ -16,12 +16,13 @@ clients="--num-clients $num_clients"
 number_of_seeds=10
 single_gpu=1
 
+echo "Preparazione Training Federato in modalità Batch"
 # Loop per le run con seed differente
 for ((current_seed=0; current_seed<number_of_seeds; current_seed+=1))
 do
     seed="--seed $current_seed"
     # Avvia il server
-    echo "Preparazione Training Federato con seed: [$current_seed / $number_of_seeds]"
+    echo "Batch Federato con seed: [$current_seed / $number_of_seeds]"
     echo "Avvio del server con parametri: $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model"
     python server.py $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model &
 
@@ -34,23 +35,25 @@ do
     # Loop per avviare i clients
     for ((i=0; i<num_clients; i+=1))
     do
-        # Determina se i è pari o dispari
-        is_even=$((i % 2 == 0))
-
-        # Imposta CUDA_VISIBLE_DEVICES in base a is_even
-        if [ $is_even -eq 1 ]; then
-            gpu_id=0
-        elsex
-            gpu_id=1
-        fi
-
+        # Se siamo singola gpu imposto a 0
         if [ $single_gpu -eq 1]; then
             gpu_id=0
+        # Altrimenti distribuisco i clients fra le 2 GPU
+        else
+            # Determina se i è pari o dispari
+            is_even=$((i % 2 == 0))
+            # Imposta CUDA_VISIBLE_DEVICES in base a is_even
+            if [ $is_even -eq 1 ]; then
+                gpu_id=0
+            else
+                gpu_id=1
+            fi
         fi
 
         echo "Avvio del client $i con parametri: $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model --current-client $i, sulla GPU: $gpu_id"
         CUDA_VISIBLE_DEVICES=$gpu_id python client.py $params $clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model "--current-client" $i &
     done
+
     # Attendi che tutti i processi dei client siano completati
     wait
 
@@ -58,6 +61,8 @@ do
     wait $server_pid
 
     sleep 10
+    echo "Terminazione del server"
 done
 
-echo "Terminazione del server"
+echo "Terminazione Batch di Trainings"
+
