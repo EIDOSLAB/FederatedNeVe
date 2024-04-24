@@ -34,8 +34,9 @@ def main(args):
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,
                         use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups,
+                        model_name=args.model_name, device=device,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
-                        neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon, device=device,
+                        neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
                         neve_only_last_layer=args.neve_only_ll,
                         client_id=args.current_client, scheduler_name=args.scheduler_name, use_disk=False)

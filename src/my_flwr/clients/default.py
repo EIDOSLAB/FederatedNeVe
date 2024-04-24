@@ -13,7 +13,8 @@ from src.utils import get_optimizer, get_scheduler
 class AFederatedClient(ABC):
 
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
-                 use_groupnorm: bool = True, groupnorm_channels: int = 2, device: str = "cuda",
+                 use_groupnorm: bool = True, groupnorm_channels: int = 2,
+                 model_name: str = "resnet18", device: str = "cuda",
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
                  scheduler_name: str = "baseline", client_id: int = 0,
@@ -21,8 +22,8 @@ class AFederatedClient(ABC):
         self.device = device
         self.amp = amp
         self.epoch = 0
-        self.model = get_model(dataset=dataset_name, device=self.device, use_groupnorm=use_groupnorm,
-                               groupnorm_channels=groupnorm_channels)
+        self.model = get_model(dataset=dataset_name, model_name=model_name, device=self.device,
+                               use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader

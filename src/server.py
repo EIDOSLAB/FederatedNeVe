@@ -30,8 +30,8 @@ def main(args):
     fl.server.start_server(server_address=args.server_address,
                            config=fl.server.ServerConfig(num_rounds=args.epochs),
                            strategy=strategy(fit_metrics_aggregation_fn=weighted_average_fit,
-                                             min_fit_clients=args.num_clients,
-                                             min_evaluate_clients=args.num_clients,
+                                             min_fit_clients=args.min_fit_clients,
+                                             min_evaluate_clients=args.min_evaluate_clients,
                                              min_available_clients=args.num_clients,
                                              evaluate_metrics_aggregation_fn=weighted_average_eval)
                            )

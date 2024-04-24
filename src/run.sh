@@ -61,6 +61,7 @@ do
     wait $server_pid
 
     sleep 10
+
     echo "Terminazione del server"
 done
 

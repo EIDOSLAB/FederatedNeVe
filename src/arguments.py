@@ -36,6 +36,9 @@ def _get_default_arguments(parser):
                         help="Optimizer momentum.")
     parser.add_argument("--weight-decay", type=float, default=5e-4,
                         help="Optimizer weight decay.")
+    parser.add_argument("--model-name", type=str, default="resnet18",
+                        choices=["resnet18", "efficientnet_b0"],
+                        help="Optimizer weight decay.")
 
     # Dataset
     parser.add_argument("--dataset-root", type=str, default="../datasets",
@@ -56,8 +59,12 @@ def _get_default_arguments(parser):
 def _get_federated_arguments(parser):
     parser.add_argument("--server-address", type=str, default="127.0.0.1:8080",
                         help="Server address:port.")
-    parser.add_argument("--num-clients", type=int, default=2,
+    parser.add_argument("--num-clients", type=int, default=10,
                         help="Number of clients in the federated learning.")
+    parser.add_argument("--min-fit-clients", type=int, default=5,
+                        help="Minimum number of clients ready to start a fit operation.")
+    parser.add_argument("--min-evaluate-clients", type=int, default=5,
+                        help="Minimum number of clients ready to start an evaluate operation.")
 
 
 def _get_client_arguments(parser):
