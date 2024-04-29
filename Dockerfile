@@ -2,7 +2,7 @@ FROM python:3.10.13
 
 RUN pip3 install --upgrade pip
 
-RUN pip3 install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip3 install torch==2.3.0 torchvision==0.18 --extra-index-url https://download.pytorch.org/whl/cu118
 
 # Add the eidoslab group to the image
 # not sure it is really needed but ok

@@ -101,11 +101,10 @@ def main(args):
 
     # Init wandb project
     # TODO REMOVE COMMENT
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
     # Select strategy
     strategy = FedNeVeAvg if args.scheduler_name == "neve" else fl.server.strategy.FedAvg
-
 
     client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
     # Launch the simulation

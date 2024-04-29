@@ -1,5 +1,5 @@
-torch==2.2.2+cu118
-torchvision==0.17.2+cu118
+torch==2.3.0+cu118
+torchvision==0.18+cu118
 flwr[simulation]==1.8.0
 wandb==0.16.6
 pandas==2.2.2

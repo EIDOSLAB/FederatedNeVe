@@ -23,7 +23,7 @@ def main(args):
     # Init seeds
     set_seeds(args.seed)
     # Init wandb project
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
     # Select strategy
     strategy = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
     # Start server

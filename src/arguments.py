@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 from src.NeVe.utils import add_neve_arguments
 
@@ -19,6 +18,7 @@ def _get_default_arguments(parser):
     parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cuda",
                         help="Device type.")
     parser.add_argument("--model-name", type=str, default="resnet18",
+                        choices=["resnet18", "efficientnet_b0"],
                         help="Name of the model to train.")
     parser.add_argument("--model-use-groupnorm", type=int2bool, choices=[0, 1], default=True,
                         help="Use groupnorm rather than layernorm/batchnorm in the model")
@@ -36,9 +36,6 @@ def _get_default_arguments(parser):
                         help="Optimizer momentum.")
     parser.add_argument("--weight-decay", type=float, default=5e-4,
                         help="Optimizer weight decay.")
-    parser.add_argument("--model-name", type=str, default="resnet18",
-                        choices=["resnet18", "efficientnet_b0"],
-                        help="Optimizer weight decay.")
 
     # Dataset
     parser.add_argument("--dataset-root", type=str, default="../datasets",
@@ -54,6 +51,8 @@ def _get_default_arguments(parser):
     # Wandb
     parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated")
     parser.add_argument("--wandb-run-name", type=str, default=None)
+    parser.add_argument("--wandb-tags", type=str, default=[], nargs="+",
+                        help="Tags associated to the wandb run")
 
 
 def _get_federated_arguments(parser):
@@ -101,8 +100,7 @@ def get_args(script="client"):
         case "classical":
             _get_classical_arguments(parser)
         case _:
-            print(f"Error script type: {script} is not managed yet.")
-            sys.exit(-1)
+            raise Exception(f"Error script type: {script} is not managed yet.")
     args = parser.parse_args()
     print("Arguments:", args)
     return args

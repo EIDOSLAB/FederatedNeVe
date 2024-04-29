@@ -48,7 +48,7 @@ def main(args):
     set_seeds(args.seed)  # Just to be sure to be in the same spot whatever we generated the aux dataset or not
 
     # Init wandb project
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
     # NeVe init
     if args.scheduler_name == "neve" and "aux" in data_loaders.keys() and data_loaders["aux"] and \

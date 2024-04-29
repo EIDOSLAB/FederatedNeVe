@@ -40,6 +40,13 @@ class NeVeScheduler(object):
         self._velocity_cache: list = []
         self._lr_scheduler = lr_scheduler
 
+    def __del__(self):
+        #print("NeVeScheduler -> Del")
+        self._set_active(False)
+        #del self._hooks
+        #del self._velocity_cache
+        #del self._lr_scheduler
+
     def __enter__(self):
         self._set_active(True)
         return self
