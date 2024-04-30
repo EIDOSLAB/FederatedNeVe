@@ -18,6 +18,7 @@ from src.models import get_model
 from src.utils import set_seeds, get_optimizer, get_scheduler
 from src.utils.trainer import train_epoch, run
 from src.NeVe.scheduler import NeVeScheduler
+from src.NEq.scheduler import NEqScheduler
 
 
 def main(args):
@@ -34,10 +35,16 @@ def main(args):
 
     # Load Data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
-                                   aux_seed=args.seed, generate_aux_set=args.scheduler_name == "neve")
+                                   aux_seed=args.seed,
+                                   generate_aux_set=args.scheduler_name == "neve")
+
     train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=1,
                                                                        seed=args.seed, batch_size=args.batch_size)
     train_loader, val_loader = train_loaders[0], val_loaders[0]
+
+    if args.scheduler_name == "neq":
+        aux_loader = val_loader
+
     data_loaders = {
         "train": train_loader,
         "val": val_loader,
@@ -51,16 +58,17 @@ def main(args):
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
     # NeVe init
-    if args.scheduler_name == "neve" and "aux" in data_loaders.keys() and data_loaders["aux"] and \
-            isinstance(scheduler, NeVeScheduler):
+    if "aux" in data_loaders.keys() and data_loaders["aux"] and \
+            ((args.scheduler_name == "neve" and isinstance(scheduler, NeVeScheduler)) or
+             (args.scheduler_name == "neq" and isinstance(scheduler, NEqScheduler))):
         with scheduler:
             _ = run(model, data_loaders["aux"], None, scaler, args.device, args.amp, -1, "Aux")
         _ = scheduler.step(init_step=True)
 
     # Training cycle
     for epoch in range(0, args.epochs):
-        logs, neve_data = train_epoch(model, data_loaders, optimizer=optimizer, scheduler=scheduler,
-                                      grad_scaler=scaler, device=args.device, amp=args.amp, epoch=epoch)
+        logs, neve_data, neq_data = train_epoch(model, data_loaders, optimizer=optimizer, scheduler=scheduler,
+                                                grad_scaler=scaler, device=args.device, amp=args.amp, epoch=epoch)
         print("\n-----")
         print(f"Epoch [{epoch + 1}]/[{args.epochs}]:")
         print(f"LR: {logs['lr']}")
@@ -68,11 +76,14 @@ def main(args):
         print(f"Val: {logs['val']}")
         print(f"Test: {logs['test']}")
         if args.scheduler_name == "neve" and 'aux' in logs.keys():
-            print(f"Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
+            print(f"NeVe - Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
+        if neq_data:
+            print(f"NEq - Frozen neurons percentual: {neq_data}")
         print("-----\n")
         if neve_data and not neve_data.continue_training:
             # TODO: ADD BREAK CONDITION
             print("Training stopped since neve velocity dropped below the threshold.")
+
         # Log on wandb project
         wandb.log(logs)
 

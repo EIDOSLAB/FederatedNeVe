@@ -17,11 +17,7 @@ class NeVeHook:
         self._hook = module.register_forward_hook(self._hook_fn)
 
     def __del__(self):
-        #print("NeVeHook -> Del")
         self._hook.remove()
-        #del self._activations
-        #del self._previous_activations
-        #del self._hook
 
     def _hook_fn(self, module, input, output):
         if not self._active:

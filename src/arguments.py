@@ -45,7 +45,7 @@ def _get_default_arguments(parser):
                         help="Dataset folder name.")
     # NeVe
     parser = add_neve_arguments(parser)
-    parser.add_argument("--scheduler-name", type=str, choices=["neve", "baseline"], default="baseline",
+    parser.add_argument("--scheduler-name", type=str, choices=["neve", "baseline", "neq"], default="baseline",
                         help="'neve' use NeVe scheduler. 'baseline' use use MultiStepLR.")
 
     # Wandb

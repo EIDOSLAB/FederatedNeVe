@@ -3,18 +3,19 @@ import time
 
 import torch
 
+from NEq.scheduler import NEqScheduler
 from src.NeVe.scheduler import NeVeScheduler
 from src.NeVe.utils.data import NeVeData
 from src.utils.metrics import Accuracy, AverageMeter
 
 
 def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler, grad_scaler, device: str,
-                amp: bool = True, epoch: int = 0) -> tuple[dict, NeVeData | None]:
+                amp: bool = True, epoch: int = 0) -> tuple[dict, NeVeData | None, dict]:
     epoch_logs = {"lr": optimizer.param_groups[0]["lr"]}
     # Training phase
     if "train" in data_loaders.keys() and data_loaders["train"]:
         epoch_logs["train"] = run(model, data_loaders["train"], optimizer, grad_scaler, device, amp, epoch, "Train")
-        if not isinstance(scheduler, NeVeScheduler):
+        if not (isinstance(scheduler, NeVeScheduler) or isinstance(scheduler, NEqScheduler)):
             scheduler.step()
 
     # Validation phase
@@ -27,14 +28,20 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
 
     # NeVe phase
     neve_data = None
-    if "aux" in data_loaders.keys() and data_loaders["aux"] and isinstance(scheduler, NeVeScheduler):
+    neq_data = None
+    if "aux" in data_loaders.keys() and data_loaders["aux"]:
         with scheduler:
             _ = run(model, data_loaders["aux"], None, grad_scaler, device, amp, epoch, "Aux")
-        neve_data = scheduler.step(init_step=False)
-        if neve_data:
-            epoch_logs["aux"] = neve_data.as_dict
+        if isinstance(scheduler, NeVeScheduler):
+            neve_data = scheduler.step()
+            if neve_data:
+                epoch_logs["aux"] = neve_data.as_dict
+        elif isinstance(scheduler, NEqScheduler):
+            neq_data = scheduler.step()
+            if neq_data:
+                epoch_logs["neq"] = neq_data
 
-    return epoch_logs, neve_data
+    return epoch_logs, neve_data, neq_data
 
 
 def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp: bool = True,

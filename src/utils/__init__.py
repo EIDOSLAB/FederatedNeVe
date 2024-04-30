@@ -7,6 +7,7 @@ from torch import nn
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import MultiStepLR
 
+from src.NEq.scheduler import NEqScheduler
 from src.NeVe.scheduler import ReduceLROnLocalPlateau, NeVeScheduler
 
 
@@ -45,4 +46,7 @@ def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, scheduler_
             milestones = [30, 60]
         case _:
             milestones = [100, 150]
-    return MultiStepLR(optimizer, milestones=milestones)
+    baseline_scheduler = MultiStepLR(optimizer, milestones=milestones)
+    if scheduler_name == "neq":
+        return NEqScheduler(model, lr_scheduler=baseline_scheduler)
+    return baseline_scheduler

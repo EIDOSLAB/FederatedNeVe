@@ -29,7 +29,10 @@ def main(args):
     # Memory optimization
     train_loader = train_loaders[args.current_client]
     val_loader = val_loaders[args.current_client]
-    del train_loaders, val_loaders, train, test, aux
+
+    if args.scheduler_name == "neq":
+        aux_loader = val_loader
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if args.device == "cuda" else "cpu"
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,

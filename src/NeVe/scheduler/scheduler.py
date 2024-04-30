@@ -41,11 +41,7 @@ class NeVeScheduler(object):
         self._lr_scheduler = lr_scheduler
 
     def __del__(self):
-        #print("NeVeScheduler -> Del")
         self._set_active(False)
-        #del self._hooks
-        #del self._velocity_cache
-        #del self._lr_scheduler
 
     def __enter__(self):
         self._set_active(True)
@@ -80,7 +76,7 @@ class NeVeScheduler(object):
         self._velocity_cache = neve_new_metrics
         data.update_velocities(mse_data, self._stop_threshold)
         # Update scheduler
-        if data.mse_velocity:
+        if self._lr_scheduler and data.mse_velocity:
             self._lr_scheduler.step(data.mse_velocity)
         return data
 
