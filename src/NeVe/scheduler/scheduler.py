@@ -25,7 +25,7 @@ def _update_mse_metrics(current_metrics: list, new_metrics: list) -> dict[str, f
             or len(current_metrics) == 0):
         mses = [_mse(val1, val2) for val1, val2 in zip(current_metrics, new_metrics)]
         result["model_metric_mse"] = sum(mses) / len(mses)
-        result["model_metric_mse"] = result["model_metric_mse"].item()
+        result["model_metric_mse"] = result["model_metric_mse"]
         result["layers_metric_mse"] = mses
     return result
 

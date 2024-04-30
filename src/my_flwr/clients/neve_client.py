@@ -65,8 +65,6 @@ class FederatedNeVeClient(FederatedDefaultClient):
             if isinstance(value, dict):
                 continue
             train_logs[f"neve.{key}"] = value.item()
-        if velocity_data.mse_velocity is not None:
-            train_logs[f"neve.model_mse_value"] = velocity_data.mse_velocity
         train_logs["neve.continue_training"] = velocity_data.continue_training
         if self.continue_training:
             self.continue_training = velocity_data.continue_training
