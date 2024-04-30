@@ -78,6 +78,8 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
                 "model_value": client_data["neve.model_value"],
                 "model_avg_value": client_data["neve.model_avg_value"],
             }
+            if "neve.model_mse_value" in client_data.keys():
+                data_to_log["neve"][client_data["client_id"]]["model_mse_value"] = client_data["neve.model_mse_value"]
 
     wandb.log(data_to_log, commit=False)
     return aggregate_data
