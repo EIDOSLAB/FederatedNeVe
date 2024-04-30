@@ -18,6 +18,9 @@ clients="--num-clients $num_clients"
 min_fit_clients="--min-fit-clients $num_min_fit_clients"
 min_eval_clients="--min-evaluate-clients $num_min_eval_clients"
 
+tags="TEST_DIFF_CLIENTS"
+wandb_tags="--wandb-tags $tags"
+
 number_of_seeds=10
 single_gpu=1
 
@@ -28,8 +31,8 @@ do
     seed="--seed $current_seed"
     # Avvia il server
     echo "Batch Federato con seed: [$current_seed / $number_of_seeds]"
-    echo "Avvio del server con parametri: $params $clients $min_fit_clients $min_eval_clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model"
-    python server.py $params $clients $min_fit_clients $min_eval_clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model &
+    echo "Avvio del server con parametri: $params $clients $min_fit_clients $min_eval_clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model $wandb_tags"
+    python server.py $params $clients $min_fit_clients $min_eval_clients $optimizer $scheduler $neve_only_ll $model_use_groupnorm $seed $dataset $model $wandb_tags &
 
     # Ottieni l'ID del processo del server
     server_pid=$!
