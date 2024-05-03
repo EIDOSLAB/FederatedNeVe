@@ -85,6 +85,7 @@ class FedNeVeAvg(FedAvg):
                          fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                          evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn, inplace=inplace)
         self.clients_velocity: list[tuple[ClientProxy, float]] = []
+        self.even_fit = False
 
     def aggregate_fit(
             self,
@@ -118,13 +119,18 @@ class FedNeVeAvg(FedAvg):
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
-        # TODO: QUA USO LA METà DEI CLIENTS
+        # clients = client_manager.sample(
+        #     num_clients=sample_size, min_num_clients=min_num_clients
+        # )
+
+        # TODO: METODO NUOVO CHE PRENDE SEMPRE I PRIMI N CLIENTS E POI GLI ALTRI N
         if sample_size > min_num_clients / 2:
             sample_size = int(min_num_clients / 2)
+        clients = [client for _, client in client_manager.clients.items()]
+        # Una volta seleziono i primi 5 clients, la volta successiva prendo gli ultimi 5 clients
+        clients = clients[:sample_size] if self.even_fit else clients[sample_size:]
 
-        clients = client_manager.sample(
-            num_clients=sample_size, min_num_clients=min_num_clients
-        )
+        self.even_fit = not self.even_fit
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]

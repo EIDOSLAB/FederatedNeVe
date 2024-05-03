@@ -31,8 +31,9 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.is_neve_setupped = False
         self.continue_training = True
         self.scheduler = FederatedNeVeScheduler(self.model,
-                                                ReduceLROnLocalPlateau(self.optimizer,
-                                                                       factor=neve_alpha, patience=neve_delta),
+                                                None,
+                                                # ReduceLROnLocalPlateau(self.optimizer,
+                                                #                       factor=neve_alpha, patience=neve_delta),
                                                 velocity_momentum=neve_momentum,
                                                 stop_threshold=neve_epsilon,
                                                 save_path=self.disk_folder,
