@@ -18,4 +18,7 @@ def add_neve_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
                         help="NeVe - Scheduler epochs of patience.")
     parser.add_argument("--neve-only-ll", type=_int2bool, choices=[0, 1], default=False,
                         help="NeVe - Hooks only for the last layer or whole model.")
+    parser.add_argument("--neve-use-lr-scheduler", type=_int2bool, choices=[0, 1], default=True,
+                        help="NeVe - Use a scheduling for the LR. If False it will be constant.")
+
     return parser

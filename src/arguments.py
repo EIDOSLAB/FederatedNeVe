@@ -64,6 +64,8 @@ def _get_federated_arguments(parser):
                         help="Minimum number of clients ready to start a fit operation.")
     parser.add_argument("--min-evaluate-clients", type=int, default=5,
                         help="Minimum number of clients ready to start an evaluate operation.")
+    parser.add_argument("--use-half-clients", type=int2bool, choices=[0, 1], default=False,
+                        help="If False, use all possible clients for fit. If True it uses half the available clients.")
 
 
 def _get_client_arguments(parser):

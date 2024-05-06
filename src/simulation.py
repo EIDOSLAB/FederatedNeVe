@@ -8,6 +8,7 @@ from pathlib import Path
 import flwr as fl
 import torch
 import wandb
+from flwr.server.strategy import FedAvg
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent.parent
@@ -35,6 +36,7 @@ amp = True
 device = "cuda"
 model_name = "resnet18"
 neve_only_last_layer = True
+neve_use_lr_scheduler = True
 
 
 def client_fn(cid: str):
@@ -49,6 +51,7 @@ def client_fn(cid: str):
                       client_id=int(cid), model_name=model_name, device=device,
                       lr=base_lr, optimizer_name=optimizer_name,
                       momentum=momentum, weight_decay=weight_decay, amp=amp,
+                      neve_use_lr_scheduler=neve_use_lr_scheduler,
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
                       scheduler_name=scheduler_name, use_disk=use_disk,
@@ -60,7 +63,7 @@ def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta
-    global scheduler_name, use_disk, model_name, device, neve_only_last_layer
+    global scheduler_name, use_disk, model_name, device, neve_only_last_layer, neve_use_lr_scheduler
     global base_lr, optimizer_name, momentum, weight_decay, amp
     neve_epsilon = args.neve_epsilon
     neve_momentum = args.neve_momentum
@@ -76,6 +79,7 @@ def main(args):
     momentum, weight_decay = args.momentum, args.weight_decay
     amp = args.amp
     neve_only_last_layer = args.neve_only_ll
+    neve_use_lr_scheduler = args.neve_use_lr_scheduler
     model_name = args.model_name
 
     # Cleanup neve_disk_folder
@@ -100,11 +104,26 @@ def main(args):
         client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
 
     # Init wandb project
-    # TODO REMOVE COMMENT
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
     # Select strategy
-    strategy = FedNeVeAvg if args.scheduler_name == "neve" else fl.server.strategy.FedAvg
+    strategy_type = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
+    strategy = strategy_type(
+        fit_metrics_aggregation_fn=weighted_average_fit,
+        min_fit_clients=args.min_fit_clients,
+        min_evaluate_clients=args.min_evaluate_clients,
+        min_available_clients=args.num_clients,
+        evaluate_metrics_aggregation_fn=weighted_average_eval
+    )
+    if args.scheduler_name == "neve":
+        strategy = strategy_type(
+            fit_metrics_aggregation_fn=weighted_average_fit,
+            min_fit_clients=args.min_fit_clients,
+            min_evaluate_clients=args.min_evaluate_clients,
+            min_available_clients=args.num_clients,
+            evaluate_metrics_aggregation_fn=weighted_average_eval,
+            use_half_clients=args.use_half_clients
+        )
 
     client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
     # Launch the simulation
@@ -112,11 +131,7 @@ def main(args):
         client_fn=client_fn,  # A function to run a _virtual_ client when required
         num_clients=args.num_clients,  # Total number of clients available
         config=fl.server.ServerConfig(num_rounds=args.epochs),  # Specify number of FL rounds
-        strategy=strategy(fit_metrics_aggregation_fn=weighted_average_fit,
-                          min_fit_clients=args.min_fit_clients,
-                          min_evaluate_clients=args.min_evaluate_clients,
-                          min_available_clients=args.num_clients,
-                          evaluate_metrics_aggregation_fn=weighted_average_eval),
+        strategy=strategy,
         client_resources=client_resources,
     )
     # Save model...

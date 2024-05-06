@@ -76,6 +76,7 @@ class FedNeVeAvg(FedAvg):
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             inplace: bool = True,
+            use_half_clients: bool = False
     ) -> None:
         super().__init__(fraction_fit=fraction_fit, fraction_evaluate=fraction_evaluate,
                          min_fit_clients=min_fit_clients, min_evaluate_clients=min_evaluate_clients,
@@ -85,7 +86,8 @@ class FedNeVeAvg(FedAvg):
                          fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                          evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn, inplace=inplace)
         self.clients_velocity: list[tuple[ClientProxy, float]] = []
-        self.even_fit = False
+        self.even_fit: bool = False
+        self.use_half_clients: bool = use_half_clients
 
     def aggregate_fit(
             self,
@@ -119,16 +121,17 @@ class FedNeVeAvg(FedAvg):
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
-        # clients = client_manager.sample(
-        #     num_clients=sample_size, min_num_clients=min_num_clients
-        # )
-
-        # TODO: METODO NUOVO CHE PRENDE SEMPRE I PRIMI N CLIENTS E POI GLI ALTRI N
-        if sample_size > min_num_clients / 2:
-            sample_size = int(min_num_clients / 2)
-        clients = [client for _, client in client_manager.clients.items()]
-        # Una volta seleziono i primi 5 clients, la volta successiva prendo gli ultimi 5 clients
-        clients = clients[:sample_size] if self.even_fit else clients[sample_size:]
+        if not self.use_half_clients:
+            clients = client_manager.sample(
+                num_clients=sample_size, min_num_clients=min_num_clients
+            )
+        else:
+            # TODO: METODO NUOVO CHE PRENDE SEMPRE I PRIMI N CLIENTS E POI GLI ALTRI N
+            if sample_size > min_num_clients / 2:
+                sample_size = int(min_num_clients / 2)
+            clients = [client for _, client in client_manager.clients.items()]
+            # Una volta seleziono i primi 5 clients, la volta successiva prendo gli ultimi 5 clients
+            clients = clients[:sample_size] if self.even_fit else clients[sample_size:]
 
         self.even_fit = not self.even_fit
 

@@ -25,16 +25,30 @@ def main(args):
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
     # Select strategy
-    strategy = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
+    strategy_type = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
+    strategy = strategy_type(
+        fit_metrics_aggregation_fn=weighted_average_fit,
+        min_fit_clients=args.min_fit_clients,
+        min_evaluate_clients=args.min_evaluate_clients,
+        min_available_clients=args.num_clients,
+        evaluate_metrics_aggregation_fn=weighted_average_eval
+    )
+    if args.scheduler_name == "neve":
+        strategy = strategy_type(
+            fit_metrics_aggregation_fn=weighted_average_fit,
+            min_fit_clients=args.min_fit_clients,
+            min_evaluate_clients=args.min_evaluate_clients,
+            min_available_clients=args.num_clients,
+            evaluate_metrics_aggregation_fn=weighted_average_eval,
+            use_half_clients=args.use_half_clients
+        )
+
     # Start server
-    fl.server.start_server(server_address=args.server_address,
-                           config=fl.server.ServerConfig(num_rounds=args.epochs),
-                           strategy=strategy(fit_metrics_aggregation_fn=weighted_average_fit,
-                                             min_fit_clients=args.min_fit_clients,
-                                             min_evaluate_clients=args.min_evaluate_clients,
-                                             min_available_clients=args.num_clients,
-                                             evaluate_metrics_aggregation_fn=weighted_average_eval)
-                           )
+    fl.server.start_server(
+        server_address=args.server_address,
+        config=fl.server.ServerConfig(num_rounds=args.epochs),
+        strategy=strategy
+    )
     # End wandb run
     wandb.run.finish()
 

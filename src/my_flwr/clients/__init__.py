@@ -8,6 +8,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                use_groupnorm: bool = True, groupnorm_channels: int = 2, optimizer_name: str = "sgd",
                dataset_name: str = "cifar10", lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4,
                amp: bool = True, client_id: int = 0, model_name: str = "resnet18", device: str = "cuda",
+               neve_use_lr_scheduler: bool = True,
                neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
                neve_only_last_layer: bool = False,
                scheduler_name: str = "baseline", use_disk: bool = False, disk_folder="../fclients_data/"):
@@ -19,6 +20,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                                    model_name=model_name, device=device,
                                    dataset_name=dataset_name, optimizer_name=optimizer_name,
                                    lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
+                                   neve_use_lr_scheduler=neve_use_lr_scheduler,
                                    neve_epsilon=neve_epsilon, neve_momentum=neve_momentum,
                                    neve_alpha=neve_alpha, neve_delta=neve_delta,
                                    neve_only_last_layer=neve_only_last_layer,
