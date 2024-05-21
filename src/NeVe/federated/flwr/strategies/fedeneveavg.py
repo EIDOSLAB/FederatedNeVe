@@ -1,5 +1,7 @@
+import random
 from typing import Callable, Dict, List, Optional, Tuple
 
+import wandb
 from flwr.common import (
     EvaluateRes,
     FitIns,
@@ -76,7 +78,8 @@ class FedNeVeAvg(FedAvg):
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             inplace: bool = True,
-            use_half_clients: bool = False
+            clients_selection_method: str = "default",
+            clients_selection_percentage: float = 0.5
     ) -> None:
         super().__init__(fraction_fit=fraction_fit, fraction_evaluate=fraction_evaluate,
                          min_fit_clients=min_fit_clients, min_evaluate_clients=min_evaluate_clients,
@@ -85,9 +88,14 @@ class FedNeVeAvg(FedAvg):
                          accept_failures=accept_failures, initial_parameters=initial_parameters,
                          fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                          evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn, inplace=inplace)
-        self.clients_velocity: list[tuple[ClientProxy, float]] = []
+        self.clients_velocity: dict[int, float] = {}
         self.even_fit: bool = False
-        self.use_half_clients: bool = use_half_clients
+        self.clients_selection_method: str = clients_selection_method
+        self.clients_selection_percentage: float = clients_selection_percentage
+        self.clients_selection_rr_current_idx: int = 0
+        # Make sure the percentage is normalized between 0 and 1
+        if self.clients_selection_percentage > 1.0:
+            self.clients_selection_percentage /= 100
 
     def aggregate_fit(
             self,
@@ -103,7 +111,12 @@ class FedNeVeAvg(FedAvg):
             return None, {}
 
         # Cleanup results where there is no parameters because velocity is too low
-        results = self.neve_results_check(results)
+        results = self._cleanup_results(results)
+
+        # Update current velocity values
+        for client_proxy, result in results:
+            cid = result.metrics.get("client_id", -1)
+            self.clients_velocity[cid] = result.metrics.get("neve.model_avg_value", 0.0)
 
         return super().aggregate_fit(server_round, results, failures)
 
@@ -115,25 +128,9 @@ class FedNeVeAvg(FedAvg):
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
             config = self.on_fit_config_fn(server_round)
+
         fit_ins = FitIns(parameters, config)
-
-        # Sample clients
-        sample_size, min_num_clients = self.num_fit_clients(
-            client_manager.num_available()
-        )
-        if not self.use_half_clients:
-            clients = client_manager.sample(
-                num_clients=sample_size, min_num_clients=min_num_clients
-            )
-        else:
-            # TODO: METODO NUOVO CHE PRENDE SEMPRE I PRIMI N CLIENTS E POI GLI ALTRI N
-            if sample_size > min_num_clients / 2:
-                sample_size = int(min_num_clients / 2)
-            clients = [client for _, client in client_manager.clients.items()]
-            # Una volta seleziono i primi 5 clients, la volta successiva prendo gli ultimi 5 clients
-            clients = clients[:sample_size] if self.even_fit else clients[sample_size:]
-
-        self.even_fit = not self.even_fit
+        clients = self._sample_clients(client_manager)
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
@@ -151,23 +148,94 @@ class FedNeVeAvg(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
 
-        # TODO: AGGIUNGERE VELOCITY A SELF.CLIENTS_VELOCITY
-
-        # Cleanup results where there is no parameters because velocity is too low
-        results = self.neve_results_check(results, evaluate=True)
+        results = self._cleanup_results(results, evaluate=True)
 
         return super().aggregate_evaluate(server_round, results, failures)
 
     @staticmethod
-    def neve_results_check(results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
+    def neve_results_cleanup(results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
             list[tuple[ClientProxy, FitRes | EvaluateRes]]:
+        if evaluate:
+            return results
         cleaned_results = []
-        if not evaluate:
-            for client_data, res in results:
-                # Do not consider the client if the returned data is None (velocity under threshold)
-                if not res.parameters.tensors:
-                    continue
-                cleaned_results.append((client_data, res))
-        else:
-            cleaned_results = results
+        for client_data, res in results:
+            # Do not consider clients if their returned data is None (velocity under threshold)
+            if not res.parameters.tensors:
+                continue
+            cleaned_results.append((client_data, res))
         return cleaned_results
+
+    def _cleanup_results(self, results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
+            list[tuple[ClientProxy, FitRes | EvaluateRes]]:
+        match self.clients_selection_method:
+            case "default":
+                return results
+            case "default_percentage":
+                return results
+            case "default_percentage_random":
+                return results
+            case "velocity":
+                return FedNeVeAvg.neve_results_cleanup(results, evaluate=evaluate)
+            case _:
+                return results
+
+    def _sample_clients(self, client_manager: ClientManager):
+        # Sample clients-size
+        sample_size, min_num_clients = self.num_fit_clients(
+            client_manager.num_available()
+        )
+        # We sample the clients based on the selection method
+        match self.clients_selection_method:
+            # All clients selected
+            case "default":
+                clients = client_manager.sample(
+                    num_clients=sample_size, min_num_clients=min_num_clients
+                )
+            # N% of clients selected, and then selected at round-robin
+            case "default_percentage":
+                clients = [client for _, client in client_manager.clients.items()]
+                if sample_size > int(self.clients_selection_percentage * len(clients)):
+                    sample_size = int(self.clients_selection_percentage * len(clients))
+                if sample_size < 0:
+                    sample_size = 1
+                current_idx = (self.clients_selection_rr_current_idx * sample_size) % len(clients)
+                clients = clients[current_idx:current_idx + sample_size]
+                self.clients_selection_rr_current_idx += 1
+            # N% of clients selected randomly
+            case "default_percentage_random":
+                clients = [client for _, client in client_manager.clients.items()]
+                clients = random.sample(clients, int(self.clients_selection_percentage * len(clients)))
+            # N% clients selected with the highest velocity
+            case "velocity":
+                # Prendo i clients
+                clients = [(idx, client) for idx, client in client_manager.clients.items()]
+                # Prendo i clients che non hanno velocity associate
+                clients_no_velocity = [client for idx, client in clients if
+                                       int(idx) not in self.clients_velocity.keys()]
+                # Dei rimanenti ritorno i clients con la velocity più alta fino ad arrivare al numero minimo richiesto
+                clients_highest_velocity = []
+                required_clients = int(self.clients_selection_percentage * len(clients))
+                ordered_clients = sorted(self.clients_velocity.items(), key=lambda item: item[1], reverse=True)
+                for _, client in ordered_clients:
+                    if len(clients_no_velocity) + len(clients_highest_velocity) >= required_clients:
+                        break
+                    clients_highest_velocity.append(client)
+                # I clients da usare sono la somma delle due liste
+                clients = clients_no_velocity + clients_highest_velocity
+            # By default, we just select them all
+            case _:
+                clients = client_manager.sample(
+                    num_clients=sample_size, min_num_clients=min_num_clients
+                )
+        # Log which clients have been chosen
+        selected_clients = [0 for _ in client_manager.clients.items()]
+        for idx, client in client_manager.clients.items():
+            for client_s in clients:
+                if client == client_s:
+                    selected_clients[idx] = 1
+                    break
+        selected_clients_logs = {
+            "selected_clients": wandb.Table(data=[[v] for v in selected_clients], columns=["value"])
+        }
+        wandb.log(selected_clients_logs, commit=False)
+        return clients

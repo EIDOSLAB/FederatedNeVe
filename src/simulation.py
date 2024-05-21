@@ -122,7 +122,8 @@ def main(args):
             min_evaluate_clients=args.min_evaluate_clients,
             min_available_clients=args.num_clients,
             evaluate_metrics_aggregation_fn=weighted_average_eval,
-            use_half_clients=args.use_half_clients
+            clients_selection_method=args.clients_selection_method,
+            clients_selection_percentage=args.clients_selection_percentage
         )
 
     client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}

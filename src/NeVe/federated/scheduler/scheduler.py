@@ -37,8 +37,10 @@ class FederatedNeVeScheduler(NeVeScheduler):
                 self._hooks[h]._previous_activations = torch.load(path).to(device)
 
     def load_state_dicts(self, lr_state_dict, velocity_state_dict):
-        self._lr_scheduler.load_state_dict(lr_state_dict)
+        if lr_state_dict and self._lr_scheduler:
+            self._lr_scheduler.load_state_dict(lr_state_dict)
         self._velocity_cache = velocity_state_dict
 
     def state_dicts(self):
-        return self._lr_scheduler.state_dict(), self._velocity_cache
+        lr_state_dict = self._lr_scheduler.state_dict() if self._lr_scheduler else None
+        return lr_state_dict, self._velocity_cache

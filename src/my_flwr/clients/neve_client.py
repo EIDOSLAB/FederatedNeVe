@@ -34,7 +34,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.neve_use_lr_scheduler: bool = neve_use_lr_scheduler
         lr_scheduler = None
         if neve_use_lr_scheduler:
-            lr_scheduler = ReduceLROnLocalPlateau(self.optimizer, factor=neve_alpha, patience=neve_delta),
+            lr_scheduler = ReduceLROnLocalPlateau(self.optimizer, factor=neve_alpha, patience=neve_delta)
         self.scheduler = FederatedNeVeScheduler(self.model,
                                                 lr_scheduler=lr_scheduler,
                                                 velocity_momentum=neve_momentum,
