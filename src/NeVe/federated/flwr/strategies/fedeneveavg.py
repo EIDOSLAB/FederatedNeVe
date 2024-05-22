@@ -275,16 +275,17 @@ class ClientSelectionLogger:
         colorbar.ax.tick_params(labelsize=16)  # Imposta la dimensione del testo per le etichette della colorbar
 
         # Aggiungi le etichette degli assi
-        ax.set_xlabel('Epoch', fontsize=18)  # Imposta la dimensione del testo per l'etichetta x
-        ax.set_ylabel('Client', fontsize=18)  # Imposta la dimensione del testo per l'etichetta y
+        ax.set_xlabel('Epochs', fontsize=18)  # Imposta la dimensione del testo per l'etichetta x
+        ax.set_ylabel('Clients', fontsize=18)  # Imposta la dimensione del testo per l'etichetta y
         ax.set_yticks(np.arange(self.num_clients))
-        ax.set_yticklabels([f'C.{i}' for i in range(self.num_clients)],
+        ax.set_yticklabels([f'{i}' for i in range(self.num_clients)],
                            fontsize=16)  # Imposta la dimensione del testo per le etichette dell'asse y
 
         # Imposta la dimensione del testo per le etichette dell'asse x
         ax.tick_params(axis='x', labelsize=16)
-        ax.set_xticks(np.arange(self.selected_clients.shape[1]))
-        ax.set_xticklabels(np.arange(0, self.selected_clients.shape[1]))
+        xticks = np.linspace(0, self.selected_clients.shape[1] - 1, num=10, dtype=int)
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xticks)
 
         new_plot = wandb.Image(fig)
 
