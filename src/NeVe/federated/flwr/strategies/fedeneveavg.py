@@ -1,6 +1,7 @@
 import random
 from typing import Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 import wandb
 from flwr.common import (
     EvaluateRes,
@@ -14,6 +15,7 @@ from flwr.common import (
 from flwr.server import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
+from matplotlib import pyplot as plt
 
 
 class FedNeVeAvg(FedAvg):
@@ -96,6 +98,7 @@ class FedNeVeAvg(FedAvg):
         # Make sure the percentage is normalized between 0 and 1
         if self.clients_selection_percentage > 1.0:
             self.clients_selection_percentage /= 100
+        self.client_selection_logger = None
 
     def aggregate_fit(
             self,
@@ -116,7 +119,7 @@ class FedNeVeAvg(FedAvg):
         # Update current velocity values
         for client_proxy, result in results:
             cid = result.metrics.get("client_id", -1)
-            self.clients_velocity[cid] = result.metrics.get("neve.model_avg_value", 0.0)
+            self.clients_velocity[int(cid)] = result.metrics.get("neve.model_avg_value", 0.0)
 
         return super().aggregate_fit(server_round, results, failures)
 
@@ -215,11 +218,14 @@ class FedNeVeAvg(FedAvg):
                 # Dei rimanenti ritorno i clients con la velocity più alta fino ad arrivare al numero minimo richiesto
                 clients_highest_velocity = []
                 required_clients = int(self.clients_selection_percentage * len(clients))
-                ordered_clients = sorted(self.clients_velocity.items(), key=lambda item: item[1], reverse=True)
-                for _, client in ordered_clients:
+                ordered_velocities = sorted(self.clients_velocity.items(), key=lambda item: item[1], reverse=True)
+                for ordered_client_idx, _ in ordered_velocities:
                     if len(clients_no_velocity) + len(clients_highest_velocity) >= required_clients:
                         break
-                    clients_highest_velocity.append(client)
+                    for client_idx, client in clients:
+                        if int(client_idx) == int(ordered_client_idx):
+                            clients_highest_velocity.append(client)
+                            break
                 # I clients da usare sono la somma delle due liste
                 clients = clients_no_velocity + clients_highest_velocity
             # By default, we just select them all
@@ -232,10 +238,48 @@ class FedNeVeAvg(FedAvg):
         for idx, client in client_manager.clients.items():
             for client_s in clients:
                 if client == client_s:
-                    selected_clients[idx] = 1
+                    selected_clients[int(idx)] = 1
                     break
+
+        if self.client_selection_logger is None:
+            self.client_selection_logger = ClientSelectionLogger(len(selected_clients))
+
         selected_clients_logs = {
-            "selected_clients": wandb.Table(data=[[v] for v in selected_clients], columns=["value"])
+            f"selected_clients": self.client_selection_logger.make_plot(selected_clients)
         }
         wandb.log(selected_clients_logs, commit=False)
         return clients
+
+
+class ClientSelectionLogger:
+    def __init__(self, num_clients):
+        self.num_clients = num_clients
+        self.selected_clients = np.zeros((num_clients, 0))
+
+    def make_plot(self, new_selected_clients: list[int]):
+        self.selected_clients = np.column_stack([self.selected_clients, new_selected_clients])
+        # Inizializza l'immagine con una dimensione che dipende dal numero di colonne
+        fig, ax = plt.subplots(figsize=(4 + self.selected_clients.shape[1] * 0.3, self.num_clients))
+        cax = ax.matshow(self.selected_clients, cmap='Blues', vmin=0, vmax=1)
+
+        # Aggiungi la colorbar con un valore fisso di shrink
+        colorbar = fig.colorbar(cax, orientation='vertical', shrink=0.5)  # Mantieni la dimensione della colorbar
+        colorbar.ax.tick_params(labelsize=16)  # Imposta la dimensione del testo per le etichette della colorbar
+
+        # Aggiungi le etichette degli assi
+        ax.set_xlabel('Epoch', fontsize=18)  # Imposta la dimensione del testo per l'etichetta x
+        ax.set_ylabel('Client', fontsize=18)  # Imposta la dimensione del testo per l'etichetta y
+        ax.set_yticks(np.arange(self.num_clients))
+        ax.set_yticklabels([f'C.{i}' for i in range(self.num_clients)],
+                           fontsize=16)  # Imposta la dimensione del testo per le etichette dell'asse y
+
+        # Imposta la dimensione del testo per le etichette dell'asse x
+        ax.tick_params(axis='x', labelsize=16)
+        ax.set_xticks(np.arange(self.selected_clients.shape[1]))
+        ax.set_xticklabels(np.arange(0, self.selected_clients.shape[1]))
+
+        new_plot = wandb.Image(fig)
+
+        # Chiudi la figura per liberare memoria
+        plt.close(fig)
+        return new_plot
