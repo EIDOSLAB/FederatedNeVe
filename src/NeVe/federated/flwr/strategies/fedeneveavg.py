@@ -99,6 +99,8 @@ class FedNeVeAvg(FedAvg):
         if self.clients_selection_percentage > 1.0:
             self.clients_selection_percentage /= 100
         self.client_selection_logger = None
+        self.clients_mapping = {}
+        self._current_client_id = 0
 
     def aggregate_fit(
             self,
@@ -233,11 +235,17 @@ class FedNeVeAvg(FedAvg):
                 clients = client_manager.sample(
                     num_clients=sample_size, min_num_clients=min_num_clients
                 )
+        # Update current clients mapping
+        for cid, _ in client_manager.clients.items():
+            if cid not in self.clients_mapping.keys():
+                self.clients_mapping[cid] = self._current_client_id
+                self._current_client_id += 1
         # Log which clients have been chosen
         selected_clients = [0 for _ in client_manager.clients.items()]
-        for idx, client in client_manager.clients.items():
+        for cid, client in client_manager.clients.items():
             for client_s in clients:
                 if client == client_s:
+                    idx = self.clients_mapping[cid]
                     selected_clients[int(idx)] = 1
                     break
 
