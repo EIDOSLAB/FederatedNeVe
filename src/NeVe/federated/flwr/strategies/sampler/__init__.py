@@ -1,0 +1,22 @@
+from NeVe.federated.flwr.strategies.sampler.aclient_sampler import ClientSampler
+from NeVe.federated.flwr.strategies.sampler.default_sampler import DefaultSampler
+from NeVe.federated.flwr.strategies.sampler.logger.client_logger import ClientSamplerLogger
+from NeVe.federated.flwr.strategies.sampler.percentage_random_sampler import PercentageRandomSampler
+from NeVe.federated.flwr.strategies.sampler.percentage_rgroups_sampler import PercentageRGroupsSampler
+from NeVe.federated.flwr.strategies.sampler.velocity_sampler import VelocitySampler
+
+
+def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5) -> ClientSampler:
+    logger = ClientSamplerLogger()
+    match (sampling_method.lower()):
+        case "default":
+            sampler = DefaultSampler(logger)
+        case "percentage_random":
+            sampler = PercentageRandomSampler(logger, clients_sampling_percentage=sampling_percentage)
+        case "percentage_groups":
+            sampler = PercentageRGroupsSampler(logger, clients_sampling_percentage=sampling_percentage)
+        case "velocity":
+            sampler = VelocitySampler(logger, clients_sampling_percentage=sampling_percentage)
+        case _:
+            raise Exception(f"Client Sampler '{sampling_method.lower()}' not defined!")
+    return sampler

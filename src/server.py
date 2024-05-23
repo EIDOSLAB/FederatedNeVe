@@ -17,6 +17,7 @@ from src.arguments import get_args
 from src.utils import set_seeds
 from src.my_flwr.strategies import weighted_average_fit, weighted_average_eval
 from src.NeVe.federated.flwr.strategies.fedeneveavg import FedNeVeAvg
+from src.NeVe.federated.flwr.strategies.sampler import get_client_sampler
 
 
 def main(args):
@@ -35,13 +36,12 @@ def main(args):
     )
     if args.scheduler_name == "neve":
         strategy = strategy_type(
+            client_sampler=get_client_sampler(args.clients_sampling_method, args.clients_sampling_percentage),
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,
             min_available_clients=args.num_clients,
-            evaluate_metrics_aggregation_fn=weighted_average_eval,
-            clients_selection_method=args.clients_selection_method,
-            clients_selection_percentage=args.clients_selection_percentage
+            evaluate_metrics_aggregation_fn=weighted_average_eval
         )
 
     # Start server

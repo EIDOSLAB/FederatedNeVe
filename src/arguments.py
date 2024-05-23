@@ -30,7 +30,7 @@ def _get_default_arguments(parser):
                         help="Batch size, an higher value requires more memory.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
-    parser.add_argument("--lr", type=float, default=0.01,
+    parser.add_argument("--lr", type=float, default=0.001,
                         help="Optimizer starting learning rate.")
     parser.add_argument("--momentum", type=float, default=0.9,
                         help="Optimizer momentum.")
@@ -56,7 +56,7 @@ def _get_default_arguments(parser):
 
 
 def _get_federated_arguments(parser):
-    parser.add_argument("--server-address", type=str, default="127.0.0.1:8080",
+    parser.add_argument("--server-address", type=str, default="127.0.0.1:6789",
                         help="Server address:port.")
     parser.add_argument("--num-clients", type=int, default=10,
                         help="Number of clients in the federated learning.")
@@ -64,12 +64,12 @@ def _get_federated_arguments(parser):
                         help="Minimum number of clients ready to start a fit operation.")
     parser.add_argument("--min-evaluate-clients", type=int, default=5,
                         help="Minimum number of clients ready to start an evaluate operation.")
-    parser.add_argument("--clients-selection-method", type=str,
-                        choices=["default", "default_percentage", "default_percentage_random", "velocity"],
+    parser.add_argument("--clients-sampling-method", type=str,
+                        choices=["default", "percentage_random", "percentage_groups", "velocity"],
                         default="default",
-                        help="How FedeNevAvg selects clients.")
-    parser.add_argument("--clients-selection-percentage", type=float, default=0.5,
-                        help="Percentage of clients to select.")
+                        help="How FedeNevAvg samples clients.")
+    parser.add_argument("--clients-sampling-percentage", type=float, default=0.5,
+                        help="Percentage of clients to sample.")
 
 
 def _get_client_arguments(parser):

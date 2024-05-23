@@ -1,8 +1,5 @@
-import random
 from typing import Callable, Dict, List, Optional, Tuple
 
-import numpy as np
-import wandb
 from flwr.common import (
     EvaluateRes,
     FitIns,
@@ -15,7 +12,8 @@ from flwr.common import (
 from flwr.server import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
-from matplotlib import pyplot as plt
+
+from NeVe.federated.flwr.strategies.sampler import ClientSampler
 
 
 class FedNeVeAvg(FedAvg):
@@ -61,6 +59,7 @@ class FedNeVeAvg(FedAvg):
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
     def __init__(
             self,
+            client_sampler: ClientSampler,
             *,
             fraction_fit: float = 1.0,
             fraction_evaluate: float = 1.0,
@@ -80,8 +79,6 @@ class FedNeVeAvg(FedAvg):
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             inplace: bool = True,
-            clients_selection_method: str = "default",
-            clients_selection_percentage: float = 0.5
     ) -> None:
         super().__init__(fraction_fit=fraction_fit, fraction_evaluate=fraction_evaluate,
                          min_fit_clients=min_fit_clients, min_evaluate_clients=min_evaluate_clients,
@@ -90,17 +87,7 @@ class FedNeVeAvg(FedAvg):
                          accept_failures=accept_failures, initial_parameters=initial_parameters,
                          fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                          evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn, inplace=inplace)
-        self.clients_velocity: dict[int, float] = {}
-        self.even_fit: bool = False
-        self.clients_selection_method: str = clients_selection_method
-        self.clients_selection_percentage: float = clients_selection_percentage
-        self.clients_selection_rr_current_idx: int = 0
-        # Make sure the percentage is normalized between 0 and 1
-        if self.clients_selection_percentage > 1.0:
-            self.clients_selection_percentage /= 100
-        self.client_selection_logger = None
-        self.clients_mapping = {}
-        self._current_client_id = 0
+        self.client_sampler: ClientSampler = client_sampler
 
     def aggregate_fit(
             self,
@@ -115,14 +102,17 @@ class FedNeVeAvg(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
 
-        # Cleanup results where there is no parameters because velocity is too low
-        results = self._cleanup_results(results)
+        # Update client mapping
+        self.client_sampler.update_clients_mapping(
+            None,
+            [(client_proxy, result.metrics.get("client_id", -1)) for client_proxy, result in results]
+        )
+        # Cleanup results
+        results = self.client_sampler.cleanup_results(results)
+        # Update clients data
+        self.client_sampler.update_clients_data(results)
 
-        # Update current velocity values
-        for client_proxy, result in results:
-            cid = result.metrics.get("client_id", -1)
-            self.clients_velocity[int(cid)] = result.metrics.get("neve.model_avg_value", 0.0)
-
+        # Aggregate results
         return super().aggregate_fit(server_round, results, failures)
 
     def configure_fit(
@@ -135,7 +125,7 @@ class FedNeVeAvg(FedAvg):
             config = self.on_fit_config_fn(server_round)
 
         fit_ins = FitIns(parameters, config)
-        clients = self._sample_clients(client_manager)
+        clients = self.client_sampler.sample_fit_clients(client_manager, sample_config_fz=self.num_fit_clients)
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
@@ -153,142 +143,7 @@ class FedNeVeAvg(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
 
-        results = self._cleanup_results(results, evaluate=True)
+        # Cleanup results
+        results = self.client_sampler.cleanup_results(results, evaluate=True)
 
         return super().aggregate_evaluate(server_round, results, failures)
-
-    @staticmethod
-    def neve_results_cleanup(results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
-            list[tuple[ClientProxy, FitRes | EvaluateRes]]:
-        if evaluate:
-            return results
-        cleaned_results = []
-        for client_data, res in results:
-            # Do not consider clients if their returned data is None (velocity under threshold)
-            if not res.parameters.tensors:
-                continue
-            cleaned_results.append((client_data, res))
-        return cleaned_results
-
-    def _cleanup_results(self, results: list[tuple[ClientProxy, FitRes | EvaluateRes]], evaluate: bool = False) -> \
-            list[tuple[ClientProxy, FitRes | EvaluateRes]]:
-        match self.clients_selection_method:
-            case "default":
-                return results
-            case "default_percentage":
-                return results
-            case "default_percentage_random":
-                return results
-            case "velocity":
-                return FedNeVeAvg.neve_results_cleanup(results, evaluate=evaluate)
-            case _:
-                return results
-
-    def _sample_clients(self, client_manager: ClientManager):
-        # Sample clients-size
-        sample_size, min_num_clients = self.num_fit_clients(
-            client_manager.num_available()
-        )
-        # We sample the clients based on the selection method
-        match self.clients_selection_method:
-            # All clients selected
-            case "default":
-                clients = client_manager.sample(
-                    num_clients=sample_size, min_num_clients=min_num_clients
-                )
-            # N% of clients selected, and then selected at round-robin
-            case "default_percentage":
-                clients = [client for _, client in client_manager.clients.items()]
-                if sample_size > int(self.clients_selection_percentage * len(clients)):
-                    sample_size = int(self.clients_selection_percentage * len(clients))
-                if sample_size < 0:
-                    sample_size = 1
-                current_idx = (self.clients_selection_rr_current_idx * sample_size) % len(clients)
-                clients = clients[current_idx:current_idx + sample_size]
-                self.clients_selection_rr_current_idx += 1
-            # N% of clients selected randomly
-            case "default_percentage_random":
-                clients = [client for _, client in client_manager.clients.items()]
-                clients = random.sample(clients, int(self.clients_selection_percentage * len(clients)))
-            # N% clients selected with the highest velocity
-            case "velocity":
-                # Prendo i clients
-                clients = [(idx, client) for idx, client in client_manager.clients.items()]
-                # Prendo i clients che non hanno velocity associate
-                clients_no_velocity = [client for idx, client in clients if
-                                       int(idx) not in self.clients_velocity.keys()]
-                # Dei rimanenti ritorno i clients con la velocity più alta fino ad arrivare al numero minimo richiesto
-                clients_highest_velocity = []
-                required_clients = int(self.clients_selection_percentage * len(clients))
-                ordered_velocities = sorted(self.clients_velocity.items(), key=lambda item: item[1], reverse=True)
-                for ordered_client_idx, _ in ordered_velocities:
-                    if len(clients_no_velocity) + len(clients_highest_velocity) >= required_clients:
-                        break
-                    for client_idx, client in clients:
-                        if int(client_idx) == int(ordered_client_idx):
-                            clients_highest_velocity.append(client)
-                            break
-                # I clients da usare sono la somma delle due liste
-                clients = clients_no_velocity + clients_highest_velocity
-            # By default, we just select them all
-            case _:
-                clients = client_manager.sample(
-                    num_clients=sample_size, min_num_clients=min_num_clients
-                )
-        # Update current clients mapping
-        for cid, _ in client_manager.clients.items():
-            if cid not in self.clients_mapping.keys():
-                self.clients_mapping[cid] = self._current_client_id
-                self._current_client_id += 1
-        # Log which clients have been chosen
-        selected_clients = [0 for _ in client_manager.clients.items()]
-        for cid, client in client_manager.clients.items():
-            for client_s in clients:
-                if client == client_s:
-                    idx = self.clients_mapping[cid]
-                    selected_clients[int(idx)] = 1
-                    break
-
-        if self.client_selection_logger is None:
-            self.client_selection_logger = ClientSelectionLogger(len(selected_clients))
-
-        selected_clients_logs = {
-            f"selected_clients": self.client_selection_logger.make_plot(selected_clients)
-        }
-        wandb.log(selected_clients_logs, commit=False)
-        return clients
-
-
-class ClientSelectionLogger:
-    def __init__(self, num_clients):
-        self.num_clients = num_clients
-        self.selected_clients = np.zeros((num_clients, 0))
-
-    def make_plot(self, new_selected_clients: list[int]):
-        self.selected_clients = np.column_stack([self.selected_clients, new_selected_clients])
-        # Inizializza l'immagine con una dimensione che dipende dal numero di colonne
-        fig, ax = plt.subplots(figsize=(4 + self.selected_clients.shape[1] * 0.3, self.num_clients))
-        cax = ax.matshow(self.selected_clients, cmap='Blues', vmin=0, vmax=1)
-
-        # Aggiungi la colorbar con un valore fisso di shrink
-        colorbar = fig.colorbar(cax, orientation='vertical', shrink=0.5)  # Mantieni la dimensione della colorbar
-        colorbar.ax.tick_params(labelsize=16)  # Imposta la dimensione del testo per le etichette della colorbar
-
-        # Aggiungi le etichette degli assi
-        ax.set_xlabel('Epochs', fontsize=18)  # Imposta la dimensione del testo per l'etichetta x
-        ax.set_ylabel('Clients', fontsize=18)  # Imposta la dimensione del testo per l'etichetta y
-        ax.set_yticks(np.arange(self.num_clients))
-        ax.set_yticklabels([f'{i}' for i in range(self.num_clients)],
-                           fontsize=16)  # Imposta la dimensione del testo per le etichette dell'asse y
-
-        # Imposta la dimensione del testo per le etichette dell'asse x
-        ax.tick_params(axis='x', labelsize=16)
-        xticks = np.linspace(0, self.selected_clients.shape[1] - 1, num=10, dtype=int)
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xticks)
-
-        new_plot = wandb.Image(fig)
-
-        # Chiudi la figura per liberare memoria
-        plt.close(fig)
-        return new_plot
