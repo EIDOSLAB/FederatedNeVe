@@ -31,6 +31,8 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.aux_loader = aux_loader
         self.is_neve_setupped: bool = False
         self.continue_training: bool = True
+        # TODO: ADD THIS TO THE PARAMETERS
+        self.use_early_stop: bool = False
         self.neve_use_lr_scheduler: bool = neve_use_lr_scheduler
         lr_scheduler = None
         if neve_use_lr_scheduler:
@@ -56,10 +58,10 @@ class FederatedNeVeClient(FederatedDefaultClient):
             self.is_neve_setupped = True
 
         # Perform default fit step
-        if self.continue_training:
-            params, len_ds, train_logs = super()._fit_method(parameters, config)
-        else:
+        if self.use_early_stop and not self.continue_training:
             return [], len(self.train_loader), {}
+        else:
+            params, len_ds, train_logs = super()._fit_method(parameters, config)
         # Get the velocity value after the training step (velocity at time t)
         with self.scheduler:
             _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
