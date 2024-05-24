@@ -11,10 +11,7 @@ class DefaultSampler(ClientSampler):
         super().__init__(logger)
         self._clients_mapping_current_id: int = 0
 
-    def update_clients_mapping(self, client_manager: ClientManager | None,
-                               new_clients_mapping: list[tuple[ClientProxy, int]]):
-        if client_manager is None:
-            return
+    def _update_clients_mapping(self, client_manager: ClientManager):
         for cid, _ in client_manager.clients.items():
             if cid not in self._clients_mapping.keys():
                 self._clients_mapping[cid] = self._clients_mapping_current_id
@@ -32,7 +29,6 @@ class DefaultSampler(ClientSampler):
         sample_size, min_num_clients = sample_config_fz(
             client_manager.num_available()
         )
-        self.update_clients_mapping(client_manager, [])
         return client_manager.sample(
             num_clients=sample_size, min_num_clients=min_num_clients
         )

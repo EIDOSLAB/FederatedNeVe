@@ -11,15 +11,6 @@ class VelocitySampler(PercentageRandomSampler):
         super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage)
         self.clients_velocity: dict[int, float] = {}
 
-    def update_clients_mapping(self, client_manager: ClientManager, new_clients_mapping: list[tuple[ClientProxy, int]]):
-        for client_proxy, client_id in new_clients_mapping:
-            # If client was not in the mapping, then adding it
-            if client_proxy.cid not in self._clients_mapping.keys():
-                self._clients_mapping[client_proxy.cid] = client_id
-            # If the value was "default" then update it
-            if self._clients_mapping[client_proxy.cid] == -1:
-                self._clients_mapping[client_proxy.cid] = client_id
-
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
         # Update current velocity values
         for client_proxy, results in new_results:

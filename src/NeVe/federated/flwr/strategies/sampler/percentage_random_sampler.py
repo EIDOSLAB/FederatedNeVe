@@ -18,6 +18,5 @@ class PercentageRandomSampler(DefaultSampler):
         return results
 
     def _sample_fit_clients(self, client_manager: ClientManager, sample_config_fz=None) -> list[ClientProxy]:
-        self.update_clients_mapping(client_manager, [])
         clients = [client for _, client in client_manager.clients.items()]
         return random.sample(clients, int(self._clients_selection_percentage * len(clients)))

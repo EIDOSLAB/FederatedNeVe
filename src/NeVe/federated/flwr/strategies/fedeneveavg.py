@@ -102,11 +102,6 @@ class FedNeVeAvg(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
 
-        # Update client mapping
-        self.client_sampler.update_clients_mapping(
-            None,
-            [(client_proxy, result.metrics.get("client_id", -1)) for client_proxy, result in results]
-        )
         # Cleanup results
         results = self.client_sampler.cleanup_results(results)
         # Update clients data
@@ -125,6 +120,7 @@ class FedNeVeAvg(FedAvg):
             config = self.on_fit_config_fn(server_round)
 
         fit_ins = FitIns(parameters, config)
+
         clients = self.client_sampler.sample_fit_clients(client_manager, sample_config_fz=self.num_fit_clients)
 
         # Return client/config pairs

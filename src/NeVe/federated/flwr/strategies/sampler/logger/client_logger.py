@@ -36,7 +36,7 @@ class ClientSamplerLogger:
 
         # Add new data to history
         self._history_active_clients.append(new_active_clients)
-        history_active_clients_data = np.array(self._history_active_clients)
+        history_active_clients_data = np.array(self._history_active_clients).transpose()
 
         # Init the image with a dynamic size depending on the number of epochs
         fig, ax = plt.subplots(figsize=(2 + history_active_clients_data.shape[1] * 0.5, 2 * self._current_max_clients))
