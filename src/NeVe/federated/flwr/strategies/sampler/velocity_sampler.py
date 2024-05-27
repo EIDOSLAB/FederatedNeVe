@@ -7,12 +7,19 @@ from NeVe.federated.flwr.strategies.sampler.logger import ClientSamplerLogger
 
 
 class VelocitySampler(PercentageRandomSampler):
-    def __init__(self, logger: ClientSamplerLogger, clients_sampling_percentage: float = 0.5):
+    def __init__(self, logger: ClientSamplerLogger, clients_sampling_percentage: float = 0.5,
+                 sampling_velocity_aging: float = 0.01):
         super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage)
         self.clients_velocity: dict[int, float] = {}
+        self.sampling_velocity_aging = sampling_velocity_aging
 
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
-        # Update current velocity values
+        # Apply sampling weight decay to all velocities before updating velocities
+        # This way only not-sampled clients will have their velocity decayed
+        for idx in self.clients_velocity.keys():
+            self.clients_velocity[idx] *= (1 + self.sampling_velocity_aging)
+
+        # Update velocity values of sampled clients
         for client_proxy, results in new_results:
             idx = self._clients_mapping[client_proxy.cid]
             self.clients_velocity[idx] = results.metrics.get("neve.model_avg_value", 0.0)

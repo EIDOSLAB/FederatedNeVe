@@ -1,7 +1,7 @@
 torch==2.3.0+cu118
 torchvision==0.18+cu118
 flwr[simulation]==1.8.0
-wandb==0.16.6
+wandb==0.17.0
 pandas==2.2.2
 numpy==1.26.4
-matplotlib==3.8.4
+matplotlib==3.9.0

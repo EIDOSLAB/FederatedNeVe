@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import wandb
 from flwr.server.client_proxy import ClientProxy
-from matplotlib import pyplot as plt
 
 
 class ClientSamplerLogger:
@@ -21,8 +21,10 @@ class ClientSamplerLogger:
             active_clients[cidx] = 1
 
         # Log to wandb
+        plot, plot_data = self._make_active_clients_plot(active_clients)
         wandb.log({
-            f"selected_clients": self._make_active_clients_plot(active_clients)
+            "selected_clients": plot,
+            "selected_clients_data": plot_data
         }, commit=False)
 
     def _make_active_clients_plot(self, new_active_clients: list[int]):
@@ -62,4 +64,14 @@ class ClientSamplerLogger:
 
         # Close the plt figure to save memory
         plt.close(fig)
-        return wandb_plot
+
+        # Now also prepare the plot tabular data
+        # Crea una tabella
+        columns = [f"e_{i}" for i in range(history_active_clients_data.shape[1])]
+        wandb_plot_data = wandb.Table(columns=columns)
+
+        # Aggiungi righe alla tabella
+        for row in history_active_clients_data:
+            wandb_plot_data.add_data(*row)
+
+        return wandb_plot, wandb_plot_data

@@ -17,7 +17,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
                  scheduler_name: str = "neve", client_id: int = 0,
-                 neve_use_lr_scheduler: bool = True,
+                 neve_use_lr_scheduler: bool = True, neve_use_early_stop: bool = False,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
                  neve_only_last_layer: bool = False, use_disk: bool = False, disk_folder: str = "../fclients_data/"):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
@@ -31,8 +31,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.aux_loader = aux_loader
         self.is_neve_setupped: bool = False
         self.continue_training: bool = True
-        # TODO: ADD THIS TO THE PARAMETERS
-        self.use_early_stop: bool = False
+        self.use_early_stop: bool = neve_use_early_stop
         self.neve_use_lr_scheduler: bool = neve_use_lr_scheduler
         lr_scheduler = None
         if neve_use_lr_scheduler:

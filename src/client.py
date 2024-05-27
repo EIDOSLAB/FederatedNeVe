@@ -40,6 +40,7 @@ def main(args):
                         model_name=args.model_name, device=device,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         neve_use_lr_scheduler=args.neve_use_lr_scheduler,
+                        neve_use_early_stop=args.neve_use_early_stop,
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
                         neve_only_last_layer=args.neve_only_ll,

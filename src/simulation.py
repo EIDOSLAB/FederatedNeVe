@@ -41,6 +41,7 @@ device = "cuda"
 model_name = "resnet18"
 neve_only_last_layer = True
 neve_use_lr_scheduler = True
+neve_use_early_stop = False
 
 
 def client_fn(cid: str):
@@ -56,6 +57,7 @@ def client_fn(cid: str):
                       lr=base_lr, optimizer_name=optimizer_name,
                       momentum=momentum, weight_decay=weight_decay, amp=amp,
                       neve_use_lr_scheduler=neve_use_lr_scheduler,
+                      neve_use_early_stop=neve_use_early_stop,
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
                       scheduler_name=scheduler_name, use_disk=use_disk,
@@ -66,7 +68,7 @@ def client_fn(cid: str):
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
-    global neve_epsilon, neve_momentum, neve_alpha, neve_delta
+    global neve_epsilon, neve_momentum, neve_alpha, neve_delta, neve_use_early_stop
     global scheduler_name, use_disk, model_name, device, neve_only_last_layer, neve_use_lr_scheduler
     global base_lr, optimizer_name, momentum, weight_decay, amp
     neve_epsilon = args.neve_epsilon
@@ -84,6 +86,7 @@ def main(args):
     amp = args.amp
     neve_only_last_layer = args.neve_only_ll
     neve_use_lr_scheduler = args.neve_use_lr_scheduler
+    neve_use_early_stop = args.neve_use_early_stop
     model_name = args.model_name
 
     # Cleanup neve_disk_folder
@@ -103,10 +106,6 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if args.device == "cuda" else "cpu"
     print("Performing training on:", device)
 
-    client_resources = None
-    if "cuda" in device.type:
-        client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
-
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
@@ -114,7 +113,9 @@ def main(args):
     strategy_type = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
     if args.scheduler_name == "neve":
         strategy = strategy_type(
-            client_sampler=get_client_sampler(args.clients_sampling_method, args.clients_sampling_percentage),
+            client_sampler=get_client_sampler(args.clients_sampling_method,
+                                              sampling_percentage=args.clients_sampling_percentage,
+                                              sampling_velocity_aging=args.clients_sampling_velocity_aging),
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,
@@ -131,6 +132,7 @@ def main(args):
         )
 
     client_resources = {"num_cpus": 1, "num_gpus": 1 / args.num_clients}
+
     # Launch the simulation
     hist = fl.simulation.start_simulation(
         client_fn=client_fn,  # A function to run a _virtual_ client when required
@@ -139,7 +141,7 @@ def main(args):
         strategy=strategy,
         client_resources=client_resources,
     )
-    # Save model...
+    # Save the model...
 
     # End wandb run
     wandb.run.finish()

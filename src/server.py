@@ -32,7 +32,9 @@ def main(args):
     strategy_type = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
     if args.scheduler_name == "neve":
         strategy = strategy_type(
-            client_sampler=get_client_sampler(args.clients_sampling_method, args.clients_sampling_percentage),
+            client_sampler=get_client_sampler(args.clients_sampling_method,
+                                              sampling_percentage=args.clients_sampling_percentage,
+                                              sampling_velocity_aging=args.clients_sampling_velocity_aging),
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,

@@ -70,6 +70,8 @@ def _get_federated_arguments(parser):
                         help="How FedeNevAvg samples clients.")
     parser.add_argument("--clients-sampling-percentage", type=float, default=0.5,
                         help="Percentage of clients to sample.")
+    parser.add_argument("--clients-sampling-velocity-aging", type=float, default=0.00,
+                        help="Aging applied to velocity for not-sampled clients.")
 
 
 def _get_client_arguments(parser):
