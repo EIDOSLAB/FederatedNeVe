@@ -17,8 +17,8 @@ clients = "--num-clients 10"
 min_fit_clients = "--min-fit-clients 5"
 min_eval_clients = "--min-evaluate-clients 5"
 
-wandb_tags = "--wandb-tags SAMPLER_PERCENTAGE_RANDOM_50"
-clients_sampling_method = "--clients-sampling-method percentage_random"
+wandb_tags = "--wandb-tags SAMPLER_VELOCITY_50_DECAY_10"
+clients_sampling_method = "--clients-sampling-method velocity"
 clients_sampling_percentage = "--clients-sampling-percentage 0.5"
 
 number_of_seeds = 1

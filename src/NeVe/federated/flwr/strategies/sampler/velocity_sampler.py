@@ -14,7 +14,7 @@ class VelocitySampler(PercentageRandomSampler):
         self.sampling_velocity_aging = sampling_velocity_aging
 
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
-        # Apply sampling weight decay to all velocities before updating velocities
+        # Apply aging to all velocities BEFORE updating velocities of sampled clients
         # This way only not-sampled clients will have their velocity decayed
         for idx in self.clients_velocity.keys():
             self.clients_velocity[idx] *= (1 + self.sampling_velocity_aging)
