@@ -1,10 +1,10 @@
 from src.dataloaders.cifar import get_cifar_10, get_cifar_100
 from src.dataloaders.mnist import get_emnist
-from src.dataloaders.random import get_random_dataset
+from src.dataloaders.random_dataset import get_random_dataset
 from src.dataloaders.utils import prepare_data, load_aux_dataset
 
 
-def get_dataset(ds_root: str, ds_name: str, split_iid: bool = True,
+def get_dataset(ds_root: str, ds_name: str,
                 aux_seed: int = 0, generate_aux_set: bool = False):
     sample_shape = (3, 32, 32)
     samples = 10

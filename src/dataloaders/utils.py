@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 
 from src.dataloaders.flwr_fedavgm_common import create_lda_partitions
-from src.dataloaders.random import RandomDataset
+from src.dataloaders.random_dataset import RandomDataset
 
 
 class NumpyDataset(Dataset):
@@ -55,7 +55,7 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
     return train_loaders, val_loaders, test_loader
 
 
-def split_data_not_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 10, num_clients: int = 1,
+def split_data_not_iid(train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
                        concentration: float = 0.5, seed: int = 42, batch_size: int = 32):
     # SPLIT DATA INTO TRAIN AND TEST SET
     len_val = len(train_set) // val_percentage  # 10 % validation set
