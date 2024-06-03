@@ -21,6 +21,10 @@ wandb_tags = "--wandb-tags SAMPLER_VELOCITY_50_DECAY_10"
 clients_sampling_method = "--clients-sampling-method velocity"
 clients_sampling_percentage = "--clients-sampling-percentage 0.5"
 
+# Dataset split distribution
+dataset_iid = "--dataset-iid 0"
+lda_concentration = "--lda-concentration 0.1"
+
 number_of_seeds = 1
 single_gpu = 1
 num_clients = 10
@@ -34,7 +38,7 @@ for current_seed in range(number_of_seeds):
 
     # Definisci i parametri comuni
     common_params = f"{params} {clients} {optimizer} {scheduler} {neve_only_ll} {neve_use_lr_scheduler} " \
-                    f"{model_use_groupnorm} {seed} {dataset} {model}"
+                    f"{model_use_groupnorm} {seed} {dataset} {model} {dataset_iid} {lda_concentration}"
 
     # Avvia il server
     server_command = f"python server.py {common_params} {min_fit_clients} {min_eval_clients} " \

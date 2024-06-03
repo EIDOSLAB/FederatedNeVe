@@ -28,7 +28,7 @@ def _get_default_arguments(parser):
                         help="Optimizer name.")
     parser.add_argument("--batch-size", type=int, default=32,
                         help="Batch size, an higher value requires more memory.")
-    parser.add_argument("--lda_concentration", type=float, default=0.5,
+    parser.add_argument("--lda-concentration", type=float, default=0.5,
                         help="If not IID data is used, this parameter is used to control the lda partitioning."
                              "Higher value generates uniform partitions, lower value generates imbalanced partitions."
                              "Es: 0.0 Generates one class per client, +inf generates uniform partitions over classes.")

@@ -19,6 +19,10 @@ wandb_tags="--wandb-tags SAMPLER_VELOCITY_50"
 clients_sampling_method="--clients-sampling-method velocity"
 clients_sampling_percentage="--clients-sampling-percentage 0.5"
 
+# Dataset split distribution
+dataset_iid="--dataset-iid 0"
+lda_concentration="--lda-concentration 0.1"
+
 number_of_seeds=10
 single_gpu=1
 num_clients=10
@@ -30,7 +34,7 @@ for ((current_seed=0; current_seed<number_of_seeds; current_seed+=1)); do
     echo "Batch Federato con seed: [$current_seed / $number_of_seeds]"
 
     # Definisci i parametri comuni
-    common_params="$params $clients $optimizer $scheduler $neve_only_ll $neve_use_lr_scheduler $model_use_groupnorm $seed $dataset $model"
+    common_params="$params $clients $optimizer $scheduler $neve_only_ll $neve_use_lr_scheduler $model_use_groupnorm $seed $dataset $model $dataset_iid $lda_concentration"
 
     # Avvia il server
     echo "Avvio del server con parametri: $common_params $min_fit_clients $min_eval_clients $clients_sampling_method $clients_sampling_percentage $wandb_tags"
