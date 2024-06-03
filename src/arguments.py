@@ -28,6 +28,10 @@ def _get_default_arguments(parser):
                         help="Optimizer name.")
     parser.add_argument("--batch-size", type=int, default=32,
                         help="Batch size, an higher value requires more memory.")
+    parser.add_argument("--lda_concentration", type=float, default=0.5,
+                        help="If not IID data is used, this parameter is used to control the lda partitioning."
+                             "Higher value generates uniform partitions, lower value generates imbalanced partitions."
+                             "Es: 0.0 Generates one class per client, +inf generates uniform partitions over classes.")
     parser.add_argument("--epochs", type=int, default=250,
                         help="Number of training epochs.")
     parser.add_argument("--lr", type=float, default=0.001,
@@ -43,6 +47,8 @@ def _get_default_arguments(parser):
     parser.add_argument("--dataset-name", type=str, default="cifar10",
                         choices=["emnist", "cifar10", "cifar100", "imagenet100"],
                         help="Dataset folder name.")
+    parser.add_argument("--dataset-iid", type=int2bool, choices=[0, 1], default=True,
+                        help="Use a IID split for the dataset")
     # NeVe
     parser = add_neve_arguments(parser)
     parser.add_argument("--scheduler-name", type=str, choices=["neve", "baseline", "neq"], default="baseline",

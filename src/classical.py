@@ -38,7 +38,10 @@ def main(args):
                                    aux_seed=args.seed,
                                    generate_aux_set=args.scheduler_name == "neve")
 
-    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux, num_clients=1,
+    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux,
+                                                                       split_iid=args.dataset_iid,
+                                                                       num_clients=args.num_clients,
+                                                                       concentration=args.lda_concentration,
                                                                        seed=args.seed, batch_size=args.batch_size)
     train_loader, val_loader = train_loaders[0], val_loaders[0]
 

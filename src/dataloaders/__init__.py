@@ -4,7 +4,8 @@ from src.dataloaders.random import get_random_dataset
 from src.dataloaders.utils import prepare_data, load_aux_dataset
 
 
-def get_dataset(ds_root: str, ds_name: str, aux_seed: int = 0, generate_aux_set: bool = False):
+def get_dataset(ds_root: str, ds_name: str, split_iid: bool = True,
+                aux_seed: int = 0, generate_aux_set: bool = False):
     sample_shape = (3, 32, 32)
     samples = 10
     match ds_name:
