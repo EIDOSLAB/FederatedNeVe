@@ -34,8 +34,8 @@ def main(args):
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
     # Select strategy
-    strategy_type = FedNeVeAvg if args.scheduler_name == "neve" else FedAvg
-    if args.scheduler_name == "neve":
+    strategy_type = FedNeVeAvg if args.neve_active else FedAvg
+    if args.neve_active:
         strategy = strategy_type(
             client_sampler=get_client_sampler(args.clients_sampling_method,
                                               sampling_percentage=args.clients_sampling_percentage,

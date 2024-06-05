@@ -36,7 +36,7 @@ def main(args):
     # Load Data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
                                    aux_seed=args.seed,
-                                   generate_aux_set=args.scheduler_name == "neve")
+                                   generate_aux_set=args.args.neve_active)
 
     train_loaders, val_loaders, test_loader, aux_loader, train_dis = prepare_data(train, test, aux,
                                                                                   split_iid=args.dataset_iid,
