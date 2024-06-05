@@ -13,7 +13,6 @@ clients="--num-clients 10"
 min_fit_clients="--min-fit-clients 5"
 min_eval_clients="--min-evaluate-clients 5"
 
-wandb_tags="--wandb-tags SAMPLER_VELOCITY_50"
 clients_sampling_method="--clients-sampling-method velocity"
 clients_sampling_percentage="--clients-sampling-percentage 0.5"
 clients_sampling_velocity_aging="--clients-sampling-velocity-aging 0.1"
@@ -27,7 +26,9 @@ use_neve="--neve-active 0"
 neve_use_lr_scheduler="--neve-use-lr-scheduler 0"
 neve_only_ll="--neve-only-ll 1"
 
-number_of_seeds=10
+wandb_tags="--wandb-tags SAMPLER_VELOCITY_50"
+
+number_of_seeds=3
 single_gpu=1
 num_clients=10
 

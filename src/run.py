@@ -3,33 +3,43 @@ import subprocess
 import time
 
 # Parametri per il server ed i clients
-params = "--amp 1 --device cuda --batch-size 100 --epochs 250 --lr 0.001"
-optimizer = "--optimizer sgd"
-scheduler = "--scheduler-name baseline"
-model_use_groupnorm = "--model-use-groupnorm 1"
-dataset = "--dataset-name cifar10"
-model = "--model-name resnet18"
+params = "--amp 1 --device cuda --batch-size 100 --epochs 250 --lr 0.001".strip()
+optimizer = "--optimizer sgd".strip()
+scheduler = "--scheduler-name baseline".strip()
+model_use_groupnorm = "--model-use-groupnorm 1".strip()
+dataset = "--dataset-name cifar10".strip()
+model = "--model-name resnet18".strip()
 
 # Numero di clients da avviare
-clients = "--num-clients 10"
-min_fit_clients = "--min-fit-clients 5"
-min_eval_clients = "--min-evaluate-clients 5"
+clients = "--num-clients 10".strip()
+min_fit_clients = "--min-fit-clients 5".strip()
+min_eval_clients = "--min-evaluate-clients 5".strip()
 
-wandb_tags = "--wandb-tags SAMPLER_VELOCITY_50_DECAY_10"
-clients_sampling_method = "--clients-sampling-method velocity"
-clients_sampling_percentage = "--clients-sampling-percentage 0.5"
-clients_sampling_velocity_aging = "--clients-sampling-velocity-aging 0.1"
+clients_sampling_method = "--clients-sampling-method velocity".strip()
+clients_sampling_percentage = "--clients-sampling-percentage 0.5".strip()
+clients_sampling_velocity_aging = "--clients-sampling-velocity-aging 0.1".strip()
 
 # Dataset split distribution
-dataset_iid = "--dataset-iid 0"
-lda_concentration = "--lda-concentration 0.1"
+dataset_iid = "--dataset-iid 0".strip()
+lda_concentration = "--lda-concentration 0.1".strip()
 
 # Use Neve
-use_neve = "--neve-active 0"
-neve_use_lr_scheduler = "--neve-use-lr-scheduler 0"
-neve_only_ll = "--neve-only-ll 1"
+use_neve = "--neve-active 0".strip()
+neve_use_lr_scheduler = "--neve-use-lr-scheduler 0".strip()
+neve_only_ll = "--neve-only-ll 1".strip()
 
-number_of_seeds = 1
+wandb_tags = f"--wandb-tags SAMPLER-{clients_sampling_method.split(' ')[-1].upper()}" \
+             f"_{clients_sampling_percentage.split(' ')[-1]}"
+
+if clients_sampling_method.split(" ")[-1] == "velocity":
+    wandb_tags += f"_AGING_{clients_sampling_velocity_aging.split(' ')[-1]}"
+
+if dataset_iid.split(" ")[-1] == "0":
+    wandb_tags += f" NON-IID LDA-CONCENTRATION_{lda_concentration.split(' ')[-1]}"
+else:
+    wandb_tags += " IID"
+
+number_of_seeds = 3
 single_gpu = 1
 num_clients = 10
 
