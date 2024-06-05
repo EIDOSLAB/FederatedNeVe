@@ -65,12 +65,17 @@ class AFederatedClient(ABC):
         # Load components states (Optimizers, schedulers, etc...)
         if self.use_disk:
             self._load()
+        self._update_components()
         # Perform the eval method
         eval_loss, len_ds, results_data = self._evaluate_method(parameters, config)
         return eval_loss, len_ds, results_data
 
     def get_client_checkpoint_path(self):
         return os.path.join(self.disk_folder, f"client_{self.client_id}_state.pt")
+
+    @abc.abstractmethod
+    def _update_components(self):
+        pass
 
     @abc.abstractmethod
     def _fit_method(self, parameters, config) -> tuple[list, int, dict]:

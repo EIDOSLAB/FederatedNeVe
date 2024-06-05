@@ -3,12 +3,16 @@ import os
 import flwr as fl
 import torch
 
-from src.NeVe.federated.scheduler import FederatedNeVeScheduler
 from src.my_flwr.clients.default import AFederatedClient
 from src.utils.trainer import run
 
 
 class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
+    def _update_components(self):
+        # Update scheduler
+        if self.scheduler:
+            self.scheduler.step()
+
     def _fit_method(self, parameters, config) -> tuple[list, int, dict]:
         # Perform one epoch of training
         training_stats = run(self.model, self.train_loader, self.optimizer, self.scaler, self.device,
@@ -16,10 +20,6 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
         # Unwrap training stats
         loss = training_stats["loss"]
         accuracy_1, accuracy_5 = training_stats["accuracy"]["top1"], training_stats["accuracy"]["top5"]
-
-        # Update scheduler
-        if self.scheduler and not isinstance(self.scheduler, FederatedNeVeScheduler):
-            self.scheduler.step()
 
         # Return stats in a structured way
         results_data = {

@@ -23,12 +23,13 @@ def main(args):
     set_seeds(args.seed)
     # Load data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
-                                   aux_seed=args.current_client, generate_aux_set=args.scheduler_name == "neve")
-    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(train, test, aux,
-                                                                       split_iid=args.dataset_iid,
-                                                                       num_clients=args.num_clients,
-                                                                       concentration=args.lda_concentration,
-                                                                       seed=args.seed, batch_size=args.batch_size)
+                                   aux_seed=args.current_client, generate_aux_set=args.neve_active)
+    train_loaders, val_loaders, test_loader, aux_loader, train_dis = prepare_data(train, test, aux,
+                                                                                  split_iid=args.dataset_iid,
+                                                                                  num_clients=args.num_clients,
+                                                                                  concentration=args.lda_concentration,
+                                                                                  seed=args.seed,
+                                                                                  batch_size=args.batch_size)
     # Memory optimization
     train_loader = train_loaders[args.current_client]
     val_loader = val_loaders[args.current_client]

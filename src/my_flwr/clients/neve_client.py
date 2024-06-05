@@ -36,24 +36,25 @@ class FederatedNeVeClient(FederatedDefaultClient):
         lr_scheduler = None
         if neve_use_lr_scheduler:
             lr_scheduler = ReduceLROnLocalPlateau(self.optimizer, factor=neve_alpha, patience=neve_delta)
-        self.scheduler = FederatedNeVeScheduler(self.model,
-                                                lr_scheduler=lr_scheduler,
-                                                velocity_momentum=neve_momentum,
-                                                stop_threshold=neve_epsilon,
-                                                save_path=self.disk_folder,
-                                                only_last_layer=neve_only_last_layer,
-                                                client_id=client_id)
+            self.scheduler = None
+        self.neve_scheduler = FederatedNeVeScheduler(self.model,
+                                                     lr_scheduler=lr_scheduler,
+                                                     velocity_momentum=neve_momentum,
+                                                     stop_threshold=neve_epsilon,
+                                                     save_path=self.disk_folder,
+                                                     only_last_layer=neve_only_last_layer,
+                                                     client_id=client_id)
 
     def __del__(self):
         print("FederatedNeVeClient -> Del")
-        del self.scheduler
+        del self.neve_scheduler
 
     def _fit_method(self, parameters, config) -> tuple[list, int, dict]:
-        if not self.is_neve_setupped and self.scheduler:
+        if not self.is_neve_setupped and self.neve_scheduler:
             # Get the velocity value before the training step (velocity at time t-1)
-            with self.scheduler:
+            with self.neve_scheduler:
                 _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
-            _ = self.scheduler.step(init_step=True)
+            _ = self.neve_scheduler.step(init_step=True)
             self.is_neve_setupped = True
 
         # Perform default fit step
@@ -62,10 +63,10 @@ class FederatedNeVeClient(FederatedDefaultClient):
         else:
             params, len_ds, train_logs = super()._fit_method(parameters, config)
         # Get the velocity value after the training step (velocity at time t)
-        with self.scheduler:
+        with self.neve_scheduler:
             _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
         # Step the NeVe scheduler and get velocity information
-        velocity_data = self.scheduler.step()
+        velocity_data = self.neve_scheduler.step()
         for key, value in velocity_data.as_dict["neve"].items():
             if isinstance(value, dict):
                 continue
@@ -85,18 +86,20 @@ class FederatedNeVeClient(FederatedDefaultClient):
         if not os.path.exists(self.get_client_checkpoint_path()):
             return
 
-        self.scheduler.load_activations(self.device)
+        self.neve_scheduler.load_activations(self.device)
         checkpoint = torch.load(self.get_client_checkpoint_path())
         self.epoch = checkpoint["epoch"]
         self.optimizer.load_state_dict(checkpoint["optimizer_state"])
         self.scaler.load_state_dict(checkpoint["scaler_state"])
         self.is_neve_setupped = checkpoint["is_neve_setupped"]
         self.continue_training = checkpoint["continue_training"]
-        self.scheduler.load_state_dicts(checkpoint["neve_scheduler_state"], checkpoint["neve_velocity_cache"])
+        self.neve_scheduler.load_state_dicts(checkpoint["neve_scheduler_state"], checkpoint["neve_velocity_cache"])
+        if self.scheduler:
+            self.scheduler.load_state_dict(checkpoint["default_scheduler"])
 
     def _save(self):
-        self.scheduler.save_activations()
-        neve_scheduler_state, neve_velocity_cache = self.scheduler.state_dicts()
+        self.neve_scheduler.save_activations()
+        neve_scheduler_state, neve_velocity_cache = self.neve_scheduler.state_dicts()
         torch.save(
             {
                 "epoch": self.epoch,
@@ -106,6 +109,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
                 "scaler_state": self.scaler.state_dict(),
                 "is_neve_setupped": self.is_neve_setupped,
                 "continue_training": self.continue_training,
+                "default_scheduler": self.scheduler.state_dict() if self.scheduler else None,
             },
             self.get_client_checkpoint_path()
         )

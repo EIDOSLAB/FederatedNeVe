@@ -5,9 +5,7 @@ import time
 # Parametri per il server ed i clients
 params = "--amp 1 --device cuda --batch-size 100 --epochs 250 --lr 0.001"
 optimizer = "--optimizer sgd"
-scheduler = "--scheduler-name neve"
-neve_only_ll = "--neve-only-ll 1"
-neve_use_lr_scheduler = "--neve-use-lr-scheduler 0"
+scheduler = "--scheduler-name baseline"
 model_use_groupnorm = "--model-use-groupnorm 1"
 dataset = "--dataset-name cifar10"
 model = "--model-name resnet18"
@@ -26,6 +24,11 @@ clients_sampling_velocity_aging = "--clients-sampling-velocity-aging 0.1"
 dataset_iid = "--dataset-iid 0"
 lda_concentration = "--lda-concentration 0.1"
 
+# Use Neve
+use_neve = "--neve-active 0"
+neve_use_lr_scheduler = "--neve-use-lr-scheduler 0"
+neve_only_ll = "--neve-only-ll 1"
+
 number_of_seeds = 1
 single_gpu = 1
 num_clients = 10
@@ -38,7 +41,7 @@ for current_seed in range(number_of_seeds):
     print(f"Batch Federato con seed: [{current_seed} / {number_of_seeds}]")
 
     # Definisci i parametri comuni
-    common_params = f"{params} {clients} {optimizer} {scheduler} {neve_only_ll} {neve_use_lr_scheduler} " \
+    common_params = f"{params} {clients} {optimizer} {scheduler} {use_neve} {neve_only_ll} {neve_use_lr_scheduler} " \
                     f"{model_use_groupnorm} {seed} {dataset} {model} {dataset_iid} {lda_concentration} " \
                     f"{clients_sampling_method} {clients_sampling_percentage} {clients_sampling_velocity_aging}"
 

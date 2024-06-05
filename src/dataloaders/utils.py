@@ -24,14 +24,15 @@ def prepare_data(train_set: Dataset, test_set: Dataset, aux_set: Dataset | None,
                  split_iid: bool = True,
                  num_clients: int = 1, concentration: float = 0.5, seed: int = 42, batch_size: int = 32):
     if split_iid:
-        train_l, test_l, val_l = split_data_iid(train_set, test_set, val_percentage, num_clients, seed, batch_size)
+        train_l, test_l, val_l, train_distribution = split_data_iid(train_set, test_set, val_percentage,
+                                                                    num_clients, seed, batch_size)
     else:
-        train_l, test_l, val_l = split_data_not_iid(train_set, test_set, val_percentage, num_clients, concentration,
-                                                    seed, batch_size)
+        train_l, test_l, val_l, train_distribution = split_data_not_iid(train_set, test_set, val_percentage,
+                                                                        num_clients, concentration, seed, batch_size)
     aux_l = None
     if aux_set:
         aux_l = DataLoader(aux_set, batch_size=batch_size, shuffle=False)
-    return train_l, test_l, val_l, aux_l
+    return train_l, test_l, val_l, aux_l, train_distribution
 
 
 def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 10,
@@ -44,6 +45,7 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
     # Split each partition into train/val and create DataLoader
     train_loaders = []
     val_loaders = []
+    train_distribution = []
     for ds in datasets:
         len_val = len(ds) // val_percentage  # 10 % validation set
         len_train = len(ds) - len_val
@@ -52,7 +54,7 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
         train_loaders.append(DataLoader(ds_train, batch_size=batch_size, shuffle=True))
         val_loaders.append(DataLoader(ds_val, batch_size=batch_size, shuffle=False))
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-    return train_loaders, val_loaders, test_loader
+    return train_loaders, val_loaders, test_loader, train_distribution
 
 
 def split_data_not_iid(train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
@@ -75,7 +77,7 @@ def split_data_not_iid(train_set: Dataset, test_set: Dataset, val_percentage: fl
                                              seed=seed, batch_size=batch_size, shuffle=True)
     # TEST DATA MANAGEMENT
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-    return train_loaders, val_loaders, test_loader
+    return train_loaders, val_loaders, test_loader, train_distribution
 
 
 def _create_lda_dataloaders(dataset, dirichlet_dist=None, num_partitions: int = 1,

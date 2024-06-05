@@ -3,9 +3,7 @@
 # Parametri per il server ed i clients
 params="--amp 1 --device cuda --batch-size 100 --epochs 250 --lr 0.001"
 optimizer="--optimizer sgd"
-scheduler="--scheduler-name neve"
-neve_only_ll="--neve-only-ll 1"
-neve_use_lr_scheduler="--neve-use-lr-scheduler 0"
+scheduler="--scheduler-name baseline"
 model_use_groupnorm="--model-use-groupnorm 1"
 dataset="--dataset-name cifar10"
 model="--model-name resnet18"
@@ -24,6 +22,11 @@ clients_sampling_velocity_aging="--clients-sampling-velocity-aging 0.1"
 dataset_iid="--dataset-iid 0"
 lda_concentration="--lda-concentration 0.1"
 
+# Use Neve
+use_neve="--neve-active 0"
+neve_use_lr_scheduler="--neve-use-lr-scheduler 0"
+neve_only_ll="--neve-only-ll 1"
+
 number_of_seeds=10
 single_gpu=1
 num_clients=10
@@ -35,7 +38,7 @@ for ((current_seed=0; current_seed<number_of_seeds; current_seed+=1)); do
     echo "Batch Federato con seed: [$current_seed / $number_of_seeds]"
 
     # Definisci i parametri comuni
-    common_params="$params $clients $optimizer $scheduler $neve_only_ll $neve_use_lr_scheduler $model_use_groupnorm $seed $dataset $model $dataset_iid $lda_concentration  $clients_sampling_method $clients_sampling_percentage $clients_sampling_velocity_aging"
+    common_params="$params $clients $optimizer $scheduler $use_neve $neve_only_ll $neve_use_lr_scheduler $model_use_groupnorm $seed $dataset $model $dataset_iid $lda_concentration  $clients_sampling_method $clients_sampling_percentage $clients_sampling_velocity_aging"
 
     # Avvia il server
     echo "Avvio del server con parametri: $common_params $min_fit_clients $min_eval_clients $wandb_tags"

@@ -24,6 +24,11 @@ from src.NeVe.federated.flwr.strategies.sampler import get_client_sampler
 
 
 def main(args):
+    # TODO: PLOTTARE LA DISTRIBUZIONE DEI DATI
+    # TODO: RITORNARE LA DISTRIBUZIONE DEI DATI PER DATI IID
+    # TODO: MATRICE DI CONFUSIONE DELLE CLASSI PER CAPIRE DOVE HO PROBLEMI, QUESTA DEVE ESSERCI PER OGNI EPOCA
+    # TODO: AGGIORNARE LO SCHEDULER AD OGNI EPOCA DA OGNI CLIENT (ES. NEL VALIDATE CHE è FATTO SEMPRE DA TUTTI)
+
     # Init seeds
     set_seeds(args.seed)
     # Init wandb project

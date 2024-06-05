@@ -8,6 +8,8 @@ def _int2bool(i):
 
 
 def add_neve_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.add_argument("--neve-active", type=_int2bool, choices=[0, 1], default=False,
+                        help="NeVe - Use or not NeVe. Default False.")
     parser.add_argument("--neve-momentum", type=float, default=0.5,
                         help="NeVe - Velocity momentum.")
     parser.add_argument("--neve-epsilon", type=float, default=1e-3,
