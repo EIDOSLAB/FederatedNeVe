@@ -121,6 +121,11 @@ class FedNeVeAvg(FedAvg):
 
         fit_ins = FitIns(parameters, config)
 
+        # Wait for enough clients to be connected
+        sample_size, min_num_clients = self.num_fit_clients(client_manager.num_available())
+        _ = client_manager.sample(num_clients=sample_size, min_num_clients=min_num_clients)
+
+        # Sample clients for the fit procedure
         clients = self.client_sampler.sample_fit_clients(client_manager, sample_config_fz=self.num_fit_clients)
 
         # Return client/config pairs
