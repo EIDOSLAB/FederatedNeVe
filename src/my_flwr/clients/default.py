@@ -22,8 +22,8 @@ class AFederatedClient(ABC):
         self.device = device
         self.amp = amp
         self.epoch = 0
-        self.model = get_model(dataset=dataset_name, model_name=model_name, device=self.device,
-                               use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
+        self.model, self.num_classes = get_model(dataset=dataset_name, model_name=model_name, device=self.device,
+                                                 use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader

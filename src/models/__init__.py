@@ -4,7 +4,7 @@ from src.models.federated_model import get_resnet_model, get_efficientnet_model
 
 
 def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cuda",
-              use_groupnorm=True, groupnorm_channels: int = 2) -> nn.Module:
+              use_groupnorm=True, groupnorm_channels: int = 2) -> tuple[nn.Module, int]:
     match (dataset.lower()):
         case "emnist":
             num_classes = 37  # 10 digits, 26 letters + 1: "N/A"
@@ -25,4 +25,4 @@ def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cu
         model = get_resnet_model(num_classes=num_classes, model_name="resnet18",
                                  use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
     model.to(device)
-    return model
+    return model, num_classes

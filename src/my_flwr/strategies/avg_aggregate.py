@@ -1,5 +1,8 @@
+import numpy as np
 import wandb
 from flwr.common import Metrics
+
+from src.utils.wandb_figure import mplfig_2_wandbfig, create_confusion_matrix_figure, create_distribution_figure
 
 
 def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> Metrics:
@@ -34,6 +37,18 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             for client_id, neve_data in zip(cids, neve_datas):
                 print("Neve Data:", client_id, neve_data)
                 aggregate_data["neve_optimizer"][str(client_id)] = neve_data
+
+        # Plot data distributions
+        data_distributions = {}
+        for _, m in metrics:
+            if "data_distribution_count" not in m or "data_distribution_labels" not in m:
+                continue
+            data_distributions[m["client_id"]] = (
+                np.frombuffer(m["data_distribution_count"], dtype=float).tolist(),
+                np.frombuffer(m["data_distribution_labels"], dtype=int).tolist()
+            )
+        if data_distributions:
+            aggregate_data["data_distribution"] = data_distributions
     else:
         # Multiply accuracy of each client by number of examples used
         val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
@@ -44,6 +59,15 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
         test_accuracies_top5 = [m["test_size"] * m["test_accuracy_top5"] for _, m in metrics]
         test_losses = [m["test_size"] * m["test_loss"] for _, m in metrics]
         test_examples = [m["test_size"] for _, m in metrics]
+
+        # Plot confusion matrix
+        avg_matrix = np.sum([np.frombuffer(m["confusion_matrix"], dtype=float).reshape((m["confusion_matrix_shape_d0"],
+                                                                                        m["confusion_matrix_shape_d1"]))
+                             for _, m in metrics], axis=0) / len(metrics)
+
+        avg_confusion_matrix_fig = create_confusion_matrix_figure(avg_matrix, title="Average Test Confusion Matrix")
+        avg_confusion_matrix_plt = mplfig_2_wandbfig(avg_confusion_matrix_fig)
+
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
             "val_accuracy_top1": sum(val_accuracies_top1) / sum(val_examples),
@@ -52,6 +76,7 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             "test_accuracy_top1": sum(test_accuracies_top1) / sum(test_examples),
             "test_accuracy_top5": sum(test_accuracies_top5) / sum(test_examples),
             "test_loss": sum(test_losses) / sum(test_examples),
+            'avg_confusion_matrix': avg_confusion_matrix_plt
         }
     return aggregate_data
 
@@ -80,7 +105,16 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
             }
             if "neve.model_mse_value" in client_data.keys():
                 data_to_log["neve"][client_data["client_id"]]["model_mse_value"] = client_data["neve.model_mse_value"]
-
+    if "data_distribution" in aggregate_data:
+        for client_id, distribution_data in aggregate_data["data_distribution"].items():
+            if "data_distribution" not in data_to_log:
+                data_to_log["data_distribution"] = {}
+            client_distr, client_labels = distribution_data
+            # Create client classes distribution plot
+            distribution_fig = create_distribution_figure(client_distr, client_labels,
+                                                          title=f"Client.{str(client_id)} Train-set Distribution")
+            distribution_plt = mplfig_2_wandbfig(distribution_fig)
+            data_to_log["data_distribution"][f"{str(client_id)}"] = distribution_plt
     wandb.log(data_to_log, commit=False)
     return aggregate_data
 
@@ -96,13 +130,16 @@ def weighted_average_eval(metrics: list[tuple[int, Metrics]]) -> Metrics:
                     "top1": aggregate_data["val_accuracy_top1"],
                     "top5": aggregate_data["val_accuracy_top5"]
                 },
-                "loss": aggregate_data["val_loss"]},
+                "loss": aggregate_data["val_loss"]
+            },
             "test": {
                 "accuracy": {
                     "top1": aggregate_data["test_accuracy_top1"],
                     "top5": aggregate_data["test_accuracy_top5"]
                 },
-                "loss": aggregate_data["test_loss"]}
+                "loss": aggregate_data["test_loss"]
+            },
+            "confusion_matrix": aggregate_data["avg_confusion_matrix"]
         }
     )
     return aggregate_data

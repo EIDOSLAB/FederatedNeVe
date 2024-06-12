@@ -25,8 +25,9 @@ def main(args):
     # Init seeds
     set_seeds(args.seed)
 
-    model = get_model(dataset=args.dataset_name, model_name=args.model_name, device=args.device,
-                      use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups)
+    model, num_classes = get_model(dataset=args.dataset_name, model_name=args.model_name, device=args.device,
+                                   use_groupnorm=args.model_use_groupnorm,
+                                   groupnorm_channels=args.model_groupnorm_groups)
     optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name,

@@ -39,7 +39,9 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
                    num_clients: int = 1, seed: int = 42, batch_size: int = 32):
     # Split training set into `num_clients` partitions to simulate different local datasets
     partition_size = len(train_set) // num_clients
+    remainder = len(train_set) % num_clients
     lengths = [partition_size] * num_clients
+    lengths[0] += remainder
     datasets = random_split(train_set, lengths, torch.Generator().manual_seed(seed))
 
     # Split each partition into train/val and create DataLoader

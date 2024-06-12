@@ -12,8 +12,8 @@ model = "--model-name resnet18".strip()
 
 # Numero di clients da avviare
 clients = "--num-clients 10".strip()
-min_fit_clients = "--min-fit-clients 5".strip()
-min_eval_clients = "--min-evaluate-clients 5".strip()
+min_fit_clients = "--min-fit-clients 10".strip()
+min_eval_clients = "--min-evaluate-clients 10".strip()
 
 clients_sampling_method = "--clients-sampling-method velocity".strip()
 clients_sampling_percentage = "--clients-sampling-percentage 0.5".strip()
@@ -24,7 +24,7 @@ dataset_iid = "--dataset-iid 0".strip()
 lda_concentration = "--lda-concentration 0.1".strip()
 
 # Use Neve
-use_neve = "--neve-active 0".strip()
+use_neve = "--neve-active 1".strip()
 neve_use_lr_scheduler = "--neve-use-lr-scheduler 0".strip()
 neve_only_ll = "--neve-only-ll 1".strip()
 
