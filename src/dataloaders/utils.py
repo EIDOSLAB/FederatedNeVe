@@ -1,3 +1,6 @@
+import glob
+import os
+
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -20,19 +23,21 @@ class NumpyDataset(Dataset):
         return torch.tensor(image, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
 
 
-def prepare_data(train_set: Dataset, test_set: Dataset, aux_set: Dataset | None, val_percentage: int = 10,
+def prepare_data(ds_root: str, ds_name: str,
+                 train_set: Dataset, test_set: Dataset, aux_set: Dataset | None, val_percentage: int = 10,
                  split_iid: bool = True,
                  num_clients: int = 1, concentration: float = 0.5, seed: int = 42, batch_size: int = 32):
     if split_iid:
-        train_l, test_l, val_l, train_distribution = split_data_iid(train_set, test_set, val_percentage,
-                                                                    num_clients, seed, batch_size)
+        train_l, test_l, val_l = split_data_iid(train_set, test_set, val_percentage,
+                                                num_clients, seed, batch_size)
     else:
-        train_l, test_l, val_l, train_distribution = split_data_not_iid(train_set, test_set, val_percentage,
-                                                                        num_clients, concentration, seed, batch_size)
+        train_l, test_l, val_l = split_data_not_iid(ds_root, ds_name,
+                                                    train_set, test_set, val_percentage,
+                                                    num_clients, concentration, seed, batch_size)
     aux_l = None
     if aux_set:
         aux_l = DataLoader(aux_set, batch_size=batch_size, shuffle=False)
-    return train_l, test_l, val_l, aux_l, train_distribution
+    return train_l, test_l, val_l, aux_l
 
 
 def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 10,
@@ -47,7 +52,6 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
     # Split each partition into train/val and create DataLoader
     train_loaders = []
     val_loaders = []
-    train_distribution = []
     for ds in datasets:
         len_val = len(ds) // val_percentage  # 10 % validation set
         len_train = len(ds) - len_val
@@ -56,45 +60,74 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
         train_loaders.append(DataLoader(ds_train, batch_size=batch_size, shuffle=True))
         val_loaders.append(DataLoader(ds_val, batch_size=batch_size, shuffle=False))
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-    return train_loaders, val_loaders, test_loader, train_distribution
+    return train_loaders, val_loaders, test_loader
 
 
-def split_data_not_iid(train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
+def split_data_not_iid(ds_root: str, ds_name: str,
+                       train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
                        concentration: float = 0.5, seed: int = 42, batch_size: int = 32):
-    # SPLIT DATA INTO TRAIN AND TEST SET
-    len_val = len(train_set) // val_percentage  # 10 % validation set
-    len_train = len(train_set) - len_val
-    lengths = [len_train, len_val]
-    ds_train, ds_val = random_split(train_set, lengths, torch.Generator().manual_seed(seed))
+    non_iid_path = os.path.join(ds_root, "non_iid", ds_name, str(seed), str(concentration))
+    # If data is not in disk, we create the partitions and save them into disk
+    if not os.path.exists(non_iid_path):
+        # SPLIT DATA INTO TRAIN AND TEST SET
+        len_val = len(train_set) // val_percentage  # 10 % validation set
+        len_train = len(train_set) - len_val
+        lengths = [len_train, len_val]
+        ds_train, ds_val = random_split(train_set, lengths, torch.Generator().manual_seed(seed))
 
-    # TRAIN DATA MANAGEMENT
-    # Transform data to numpy so that we can use the create_lda_partitions method
-    train_loaders, train_distribution = _create_lda_dataloaders(ds_train, dirichlet_dist=None,
-                                                                num_partitions=num_clients, concentration=concentration,
-                                                                seed=seed, batch_size=batch_size, shuffle=True)
-    # VALIDATION DATA MANAGEMENT
-    # Transform data to numpy so that we can use the create_lda_partitions method
-    val_loaders, _ = _create_lda_dataloaders(ds_val, dirichlet_dist=train_distribution,
-                                             num_partitions=num_clients, concentration=concentration,
-                                             seed=seed, batch_size=batch_size, shuffle=True)
+        # TRAIN DATA MANAGEMENT
+        # Transform data to numpy so that we can use the create_lda_partitions method
+        train_partitions, train_distribution = _create_lda_partitions(ds_train, dirichlet_dist=None,
+                                                                      num_partitions=num_clients,
+                                                                      concentration=concentration,
+                                                                      seed=seed, batch_size=batch_size)
+        # VALIDATION DATA MANAGEMENT
+        # Transform data to numpy so that we can use the create_lda_partitions method
+        val_partitions, _ = _create_lda_partitions(ds_val, dirichlet_dist=train_distribution,
+                                                   num_partitions=num_clients, concentration=concentration,
+                                                   seed=seed, batch_size=batch_size)
+        os.makedirs(non_iid_path, exist_ok=True)
+        for partition_idx, (train_partition, val_partition) in enumerate(zip(train_partitions, val_partitions)):
+            _save_lda_partition(non_iid_path, partition_idx, train_partition, val_partition)
+    # Now we can read the lda partitions
+    train_loaders, val_loaders = _load_lda_partitions(non_iid_path, num_partitions=num_clients, batch_size=batch_size)
     # TEST DATA MANAGEMENT
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-    return train_loaders, val_loaders, test_loader, train_distribution
+    return train_loaders, val_loaders, test_loader
 
 
-def _create_lda_dataloaders(dataset, dirichlet_dist=None, num_partitions: int = 1,
-                            concentration: float = 0.5, seed: int = 42, batch_size: int = 1, shuffle: bool = True):
+def _create_lda_partitions(dataset, dirichlet_dist=None, num_partitions: int = 1,
+                           concentration: float = 0.5, seed: int = 42, batch_size: int = 1):
     dataset_numpy = _dataset_to_numpy(dataset, batch_size=batch_size)
     data_partitions, distribution = create_lda_partitions(dataset_numpy,
                                                           dirichlet_dist=dirichlet_dist,
                                                           num_partitions=num_partitions,
                                                           concentration=concentration,
                                                           seed=seed, accept_imbalanced=True)
-    # Transform data_partitions into dataloaders
-    dataloaders = []
-    for partition in data_partitions:
-        dataloaders.append(DataLoader(NumpyDataset(partition[0], partition[1]), batch_size=batch_size, shuffle=shuffle))
-    return dataloaders, distribution
+    return data_partitions, distribution
+
+
+def _save_lda_partition(save_path: str, partition_idx: int, train_partition, val_partition):
+    file_path = os.path.join(save_path, f"{partition_idx}.npz")
+    np.savez(file_path,
+             train_data=train_partition[0], train_labels=train_partition[1],
+             val_data=val_partition[0], val_labels=val_partition[1])
+
+
+def _load_lda_partitions(load_path: str, num_partitions: int = 1, batch_size: int = 1):
+    # Check all partitions found in given path
+    partitions_paths = glob.glob(os.path.join(load_path, f"*.npz"))
+    # Read data partitions from disk and transform them into dataloaders
+    train_dataloaders, val_dataloaders = [], []
+    for current_idx, partition_path in enumerate(partitions_paths):
+        if current_idx >= num_partitions:
+            break
+        data = np.load(partition_path)
+        train_dataloaders.append(DataLoader(NumpyDataset(data["train_data"], data["train_labels"]),
+                                            batch_size=batch_size, shuffle=True))
+        val_dataloaders.append(DataLoader(NumpyDataset(data["val_data"], data["val_labels"]),
+                                          batch_size=batch_size, shuffle=False))
+    return train_dataloaders, val_dataloaders
 
 
 def _dataset_to_numpy(dataset, batch_size: int = 1):

@@ -97,11 +97,12 @@ def main(args):
     # Initialize global model and data
     train, test, _ = get_dataset(args.dataset_root, args.dataset_name,
                                  aux_seed=args.seed, generate_aux_set=False)
-    train_loaders, val_loaders, test_loader, _, train_dis = prepare_data(train, test, None,
-                                                                         split_iid=args.dataset_iid,
-                                                                         num_clients=args.num_clients,
-                                                                         concentration=args.lda_concentration,
-                                                                         seed=args.seed, batch_size=args.batch_size)
+    train_loaders, val_loaders, test_loader, _ = prepare_data(args.dataset_root, args.dataset_name,
+                                                              train, test, None,
+                                                              split_iid=args.dataset_iid,
+                                                              num_clients=args.num_clients,
+                                                              concentration=args.lda_concentration,
+                                                              seed=args.seed, batch_size=args.batch_size)
     # Generate aux loaders
     aux_loaders = [load_aux_dataset(shape=(3, 24, 24), aux_seed=idx, batch_size=args.batch_size)
                    for idx in range(args.num_clients)]
