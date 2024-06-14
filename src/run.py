@@ -82,10 +82,16 @@ def _start_simulation(seed: int):
     wandb_tags = f"--wandb-tags SAMPLER-{clients_sampling_method.upper()}_{clients_sampling_percentage}"
     if clients_sampling_method.lower() == "velocity":
         wandb_tags += f"_AGING_{clients_sampling_velocity_aging}"
+        wandb_tags += " SAMPLE-VELOCITY_"
+        if clients_sampling_highest_velocity == 1:
+            wandb_tags += "HIGHEST"
+        else:
+            wandb_tags += "LOWEST"
     if dataset_iid == 0:
         wandb_tags += f" NON-IID LDA-CONCENTRATION_{str(lda_concentration)}"
     else:
         wandb_tags += " IID"
+    wandb_tags += f" WAIT-EPOCHS_{str(clients_sampling_wait_epochs)}"
 
     # Start the server
     server_command = f"python server.py {common_params} {wandb_tags}"
