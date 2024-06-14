@@ -66,9 +66,10 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
 def split_data_not_iid(ds_root: str, ds_name: str,
                        train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
                        concentration: float = 0.5, seed: int = 42, batch_size: int = 32):
-    non_iid_path = os.path.join(ds_root, "non_iid", ds_name, str(seed), str(concentration))
+    non_iid_path = os.path.join(ds_root, "non_iid", ds_name, f"seed_{str(seed)}", f"beta_{str(concentration)}")
     # If data is not in disk, we create the partitions and save them into disk
     if not os.path.exists(non_iid_path):
+        print("Preparing non-IID partitions...")
         # SPLIT DATA INTO TRAIN AND TEST SET
         len_val = len(train_set) // val_percentage  # 10 % validation set
         len_train = len(train_set) - len_val
@@ -89,6 +90,7 @@ def split_data_not_iid(ds_root: str, ds_name: str,
         os.makedirs(non_iid_path, exist_ok=True)
         for partition_idx, (train_partition, val_partition) in enumerate(zip(train_partitions, val_partitions)):
             _save_lda_partition(non_iid_path, partition_idx, train_partition, val_partition)
+        print("Finished preparing non-IID partitions")
     # Now we can read the lda partitions
     train_loaders, val_loaders = _load_lda_partitions(non_iid_path, num_partitions=num_clients, batch_size=batch_size)
     # TEST DATA MANAGEMENT
