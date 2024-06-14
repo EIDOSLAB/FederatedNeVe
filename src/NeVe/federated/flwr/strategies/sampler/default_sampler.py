@@ -24,7 +24,9 @@ class DefaultSampler(ClientSampler):
             list[tuple[ClientProxy, FitRes | EvaluateRes]]:
         return results
 
-    def _sample_fit_clients(self, client_manager: ClientManager, sample_config_fz=None) -> list[ClientProxy]:
+    @staticmethod
+    def _default_fit_sample(client_manager: ClientManager, epoch: int,
+                            sample_config_fz=None) -> list[ClientProxy]:
         # Sample clients-size
         sample_size, min_num_clients = sample_config_fz(
             client_manager.num_available()
@@ -32,3 +34,7 @@ class DefaultSampler(ClientSampler):
         return client_manager.sample(
             num_clients=sample_size, min_num_clients=min_num_clients
         )
+
+    def _sample_fit_clients(self, client_manager: ClientManager, epoch: int,
+                            sample_config_fz=None) -> list[ClientProxy]:
+        return self._default_fit_sample(client_manager, epoch, sample_config_fz)

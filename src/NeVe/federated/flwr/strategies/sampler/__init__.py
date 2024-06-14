@@ -6,19 +6,23 @@ from NeVe.federated.flwr.strategies.sampler.percentage_rgroups_sampler import Pe
 from NeVe.federated.flwr.strategies.sampler.velocity_sampler import VelocitySampler
 
 
-def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5,
-                       sampling_velocity_aging: float = 0.01) -> ClientSampler:
+def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10,
+                       sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True) -> ClientSampler:
     logger = ClientSamplerLogger()
     match (sampling_method.lower()):
         case "default":
             sampler = DefaultSampler(logger)
         case "percentage_random":
-            sampler = PercentageRandomSampler(logger, clients_sampling_percentage=sampling_percentage)
+            sampler = PercentageRandomSampler(logger, sampling_wait_epochs=sampling_wait_epochs,
+                                              clients_sampling_percentage=sampling_percentage)
         case "percentage_groups":
-            sampler = PercentageRGroupsSampler(logger, clients_sampling_percentage=sampling_percentage)
+            sampler = PercentageRGroupsSampler(logger, sampling_wait_epochs=sampling_wait_epochs,
+                                               clients_sampling_percentage=sampling_percentage)
         case "velocity":
-            sampler = VelocitySampler(logger, clients_sampling_percentage=sampling_percentage,
-                                      sampling_velocity_aging=sampling_velocity_aging)
+            sampler = VelocitySampler(logger, sampling_wait_epochs=sampling_wait_epochs,
+                                      clients_sampling_percentage=sampling_percentage,
+                                      sampling_velocity_aging=sampling_velocity_aging,
+                                      sampling_highest_velocity=sampling_highest_velocity)
         case _:
             raise Exception(f"Client Sampler '{sampling_method.lower()}' not defined!")
     return sampler

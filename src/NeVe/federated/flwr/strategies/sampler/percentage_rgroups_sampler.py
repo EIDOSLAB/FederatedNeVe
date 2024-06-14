@@ -6,11 +6,17 @@ from NeVe.federated.flwr.strategies.sampler.logger import ClientSamplerLogger
 
 
 class PercentageRGroupsSampler(PercentageRandomSampler):
-    def __init__(self, logger: ClientSamplerLogger, clients_sampling_percentage: float = 0.5):
-        super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage)
+    def __init__(self, logger: ClientSamplerLogger,
+                 clients_sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10):
+        super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage,
+                         sampling_wait_epochs=sampling_wait_epochs)
         self._clients_selection_rr_current_idx: int = 0
 
-    def _sample_fit_clients(self, client_manager: ClientManager, sample_config_fz=None) -> list[ClientProxy]:
+    def _sample_fit_clients(self, client_manager: ClientManager, epoch: int,
+                            sample_config_fz=None) -> list[ClientProxy]:
+        if epoch < self._sampling_wait_epochs:
+            return self._default_fit_sample(client_manager, epoch, sample_config_fz)
+
         # Get sampling configuration
         group_sample_size, min_num_clients = sample_config_fz(
             client_manager.num_available()

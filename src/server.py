@@ -39,7 +39,9 @@ def main(args):
         strategy = strategy_type(
             client_sampler=get_client_sampler(args.clients_sampling_method,
                                               sampling_percentage=args.clients_sampling_percentage,
-                                              sampling_velocity_aging=args.clients_sampling_velocity_aging),
+                                              sampling_wait_epochs=args.clients_sampling_wait_epochs,
+                                              sampling_velocity_aging=args.clients_sampling_velocity_aging,
+                                              sampling_highest_velocity=args.clients_sampling_highest_velocity),
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,

@@ -78,6 +78,10 @@ def _get_federated_arguments(parser):
                         help="Percentage of clients to sample.")
     parser.add_argument("--clients-sampling-velocity-aging", type=float, default=0.01,
                         help="Aging applied to velocity for not-sampled clients (Percentage [0.0, 1.0]).")
+    parser.add_argument("--clients-sampling-highest-velocity", type=int2bool, choices=[0, 1], default=True,
+                        help="1 if we sample clients with highest velocity, 0 to sample with the lowest velocity.")
+    parser.add_argument("--clients-sampling-wait-epochs", type=int, default=10,
+                        help="Number of epochs in which we select all available clients.")
 
 
 def _get_client_arguments(parser):

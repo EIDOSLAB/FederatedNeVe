@@ -88,6 +88,7 @@ class FedNeVeAvg(FedAvg):
                          fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                          evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn, inplace=inplace)
         self.client_sampler: ClientSampler = client_sampler
+        self.current_epoch = 0
 
     def aggregate_fit(
             self,
@@ -96,6 +97,7 @@ class FedNeVeAvg(FedAvg):
             failures: list[tuple[ClientProxy, FitRes] | BaseException],
     ) -> tuple[Parameters | None, dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
+        self.current_epoch += 1
         if not results:
             return None, {}
         # Do not aggregate if there are failures and failures are not accepted
@@ -126,8 +128,8 @@ class FedNeVeAvg(FedAvg):
         _ = client_manager.sample(num_clients=sample_size, min_num_clients=min_num_clients)
 
         # Sample clients for the fit procedure
-        clients = self.client_sampler.sample_fit_clients(client_manager, sample_config_fz=self.num_fit_clients)
-
+        clients = self.client_sampler.sample_fit_clients(client_manager, self.current_epoch,
+                                                         sample_config_fz=self.num_fit_clients)
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
 
