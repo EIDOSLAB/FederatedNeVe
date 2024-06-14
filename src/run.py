@@ -1,7 +1,19 @@
 import platform
 import subprocess
+# ----- ----- ----- ----- -----
+# TODO: FIX SRC IMPORTS IN A BETTER WAY
+import sys
 import time
+from pathlib import Path
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parent
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+ROOT = ROOT.parent
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+# ----- ----- ----- ----- -----
 from src.dataloaders import get_dataset, prepare_data
 
 # Basic params
