@@ -15,6 +15,9 @@ class VelocitySampler(PercentageRandomSampler):
         self.clients_velocity: dict[int, float] = {}
         self.sampling_velocity_aging: float = sampling_velocity_aging
         self.sampling_highest_velocity: bool = sampling_highest_velocity
+        # If we select the lowest velocity we also need to reduce the velocity when aging is performed
+        if not self.sampling_highest_velocity:
+            self.sampling_velocity_aging *= -1
 
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
         # Apply aging to all velocities BEFORE updating velocities of sampled clients
