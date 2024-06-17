@@ -64,11 +64,11 @@ class NeVeScheduler(object):
         neve_new_metrics = []
         for k in self._hooks:
             # Get layers velocity from the hooks
-            velocity = self._hooks[k].get_velocity().detach().cpu()
+            velocity = self._hooks[k].get_velocity()
             # Log velocities histogram
             data.add_velocity(k, velocity)
             # Save this epoch velocities for the next iteration
-            neve_new_metrics.append(velocity)
+            neve_new_metrics.append(velocity[0])
             self._hooks[k].reset()
 
         # Evaluate the velocities mse

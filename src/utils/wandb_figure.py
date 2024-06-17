@@ -35,6 +35,32 @@ def create_confusion_matrix_figure(confusion_matrix: np.ndarray, title: str = "A
     return fig
 
 
+def create_velocity_bar_figure(velocity_data, neurons_names, title="Client 0 - Per Neuron Velocity - Layer 'last'"):
+    # Crea la figura di matplotlib
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Crea il plot della distribuzione sul subplot
+    bars = ax.bar(neurons_names, velocity_data, color='skyblue')
+    # Aggiungi l'annotazione sopra ogni barra con i valori normalizzati
+    for i, bar in enumerate(bars):
+        ax.text(bar.get_x() + bar.get_width() / 2, min(bar.get_height() + 0.1, 2),
+                f'{velocity_data[i]:.2f}', ha='center', va='bottom')
+
+    # Imposta i titoli e le etichette
+    ax.set_xlabel('Neurons')
+    ax.set_ylabel('Velocity')
+    ax.set_title(title)
+
+    # Imposta le etichette delle classi
+    ax.set_xticks(neurons_names)
+    ax.set_xticklabels(neurons_names)
+
+    # Imposta il limite superiore dell'asse y a 100
+    ax.set_ylim(0, 2)
+    fig.tight_layout()
+    return fig
+
+
 def create_distribution_figure(client_distr: list[int], client_labels: list, title: str = "Client Distribution"):
     # Crea la figura di matplotlib
     fig, ax = plt.subplots(figsize=(8, 6))

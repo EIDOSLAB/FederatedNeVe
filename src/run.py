@@ -85,7 +85,7 @@ def _start_simulation(seed: int):
                       f"--clients-sampling-percentage {str(clients_sampling_percentage)} " \
                       f"--clients-sampling-wait-epochs {str(clients_sampling_wait_epochs)} " \
                       f"--clients-sampling-velocity-aging {str(clients_sampling_velocity_aging)} " \
-                      f"--clients-sampling-highest-velocity {str(clients_sampling_highest_velocity)}" \
+                      f"--clients-sampling-highest-velocity {str(clients_sampling_highest_velocity)}"
 
     # Common params between server and client
     common_params = f"{basic_params} {data_params} {model_params} {neve_params} {clients_params} {sampling_params}"

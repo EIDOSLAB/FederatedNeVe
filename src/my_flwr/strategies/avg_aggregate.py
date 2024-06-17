@@ -2,7 +2,9 @@ import numpy as np
 import wandb
 from flwr.common import Metrics
 
-from src.utils.wandb_figure import mplfig_2_wandbfig, create_confusion_matrix_figure, create_distribution_figure
+from src.utils.wandb_figure import create_confusion_matrix_figure, create_distribution_figure
+from src.utils.wandb_figure import create_velocity_bar_figure
+from src.utils.wandb_figure import mplfig_2_wandbfig
 
 
 def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> Metrics:
@@ -102,9 +104,24 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
                 "continue_training": 1 if client_data["neve.continue_training"] else 0,
                 "model_value": client_data["neve.model_value"],
                 "model_avg_value": client_data["neve.model_avg_value"],
+                "neurons_velocity": {}
             }
             if "neve.model_mse_value" in client_data.keys():
                 data_to_log["neve"][client_data["client_id"]]["model_mse_value"] = client_data["neve.model_mse_value"]
+
+            for key, value in client_data.items():
+                if not key.startswith("neve.neurons_velocity."):
+                    continue
+                layer_name = key.split(".")[-1]
+                np_data = np.frombuffer(value, dtype=np.float32)
+                np_neurons = [val for val in range(0, np_data.shape[0])]
+
+                distribution_fig = create_velocity_bar_figure(np_data, np_neurons,
+                                                              title=f"Client: {client_data['client_id']} - Per Neuron "
+                                                                    f"Velocity - Layer: {layer_name}")
+                neurons_fig = mplfig_2_wandbfig(distribution_fig)
+                data_to_log["neve"][client_data["client_id"]]["neurons_velocity"][f"{layer_name}"] = neurons_fig
+    #
     if "data_distribution" in aggregate_data:
         for client_id, distribution_data in aggregate_data["data_distribution"].items():
             if "data_distribution" not in data_to_log:
