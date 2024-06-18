@@ -9,7 +9,8 @@ from NeVe.federated.flwr.strategies.sampler.logger import ClientSamplerLogger
 class VelocitySampler(PercentageRandomSampler):
     def __init__(self, logger: ClientSamplerLogger,
                  clients_sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10,
-                 sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True):
+                 sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True,
+                 sampling_min_epochs: int = 2):
         super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage,
                          sampling_wait_epochs=sampling_wait_epochs)
         self.clients_velocity: dict[int, float] = {}
@@ -18,6 +19,12 @@ class VelocitySampler(PercentageRandomSampler):
         # If we select the lowest velocity we also need to reduce the velocity when aging is performed
         if not self.sampling_highest_velocity:
             self.sampling_velocity_aging *= -1
+        self._previous_selected_clients = []
+        # TODO: MANAGE THIS PARAMETER, ADD IT TO ARGUMENTS.PY
+        self.sampling_min_epochs = sampling_min_epochs
+        if self.sampling_min_epochs < 1:
+            self.sampling_min_epochs = 1
+        self._sampling_min_epochs_count = self.sampling_min_epochs
 
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
         # Apply aging to all velocities BEFORE updating velocities of sampled clients
@@ -47,6 +54,11 @@ class VelocitySampler(PercentageRandomSampler):
         if epoch < self._sampling_wait_epochs:
             return self._default_fit_sample(client_manager, epoch, sample_config_fz)
 
+        # Return previous selected clients if we are still in the range of epochs in which we select the same clients
+        self._sampling_min_epochs_count -= 1
+        if self._previous_selected_clients and self._sampling_min_epochs_count > 0:
+            return self._previous_selected_clients
+
         # Get list of all available clients
         clients = [client for _, client in client_manager.clients.items()]
 
@@ -71,4 +83,8 @@ class VelocitySampler(PercentageRandomSampler):
                     break
 
         # The sampled clients are the merge of the 2 lists
-        return clients_no_velocity + clients_best_velocity
+        selected_clients = clients_no_velocity + clients_best_velocity
+        # Update the list containing the previous selected clients and init the counter for their sampling
+        self._previous_selected_clients = selected_clients
+        self._sampling_min_epochs_count = self.sampling_min_epochs
+        return selected_clients
