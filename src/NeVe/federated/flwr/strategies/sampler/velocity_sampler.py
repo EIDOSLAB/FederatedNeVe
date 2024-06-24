@@ -1,3 +1,5 @@
+import random
+
 from flwr.common import FitRes, EvaluateRes
 from flwr.server import ClientManager
 from flwr.server.client_proxy import ClientProxy
@@ -63,11 +65,32 @@ class VelocitySampler(PercentageRandomSampler):
         clients = [client for _, client in client_manager.clients.items()]
 
         # Select clients with no velocity
-        clients_no_velocity = [client for client in clients if client.cid in self._clients_mapping.keys() and
-                               self._clients_mapping[client.cid] not in self.clients_velocity.keys()]
+        selected_clients = [client for client in clients if client.cid in self._clients_mapping.keys() and
+                            self._clients_mapping[client.cid] not in self.clients_velocity.keys()]
 
-        # Select remaining clients with the highest velocity until we reached the desired number of sampled clients
-        required_clients_2_sample = int(self._clients_selection_percentage * len(clients))
+        if len(selected_clients) <= 0:
+            # Select remaining clients with the highest velocity until we reached the desired number of sampled clients
+            required_clients_2_sample = int(self._clients_selection_percentage * len(clients))
+
+            # Randomly select clients using velocity as weight
+            total_sum = sum(value for _, value in self.clients_velocity.items())
+            clients_normalized_velocity = [(idx, value / total_sum) for idx, value in self.clients_velocity.items()]
+            clients_normalized_velocity_rnd_idxs = set()
+            while len(selected_clients) < required_clients_2_sample:
+                # Generiamo un indice casuale pesato con i valori normalizzati
+                rand_idx = random.choices(
+                    range(len(clients_normalized_velocity)),
+                    [tup[1] for tup in clients_normalized_velocity]
+                )[0]
+                if rand_idx not in clients_normalized_velocity_rnd_idxs:
+                    clients_normalized_velocity_rnd_idxs.add(rand_idx)
+                    # Get the client reference from the list of clients
+                    for client in clients:
+                        if self._clients_mapping[client.cid] == rand_idx:
+                            selected_clients.append(client)
+                            break
+        """
+        # Select clients with highest velocity
         clients_best_velocity = []
         clients_ordered_by_velocity = sorted(self.clients_velocity.items(), key=lambda item: item[1],
                                              reverse=self.sampling_highest_velocity)
@@ -81,9 +104,9 @@ class VelocitySampler(PercentageRandomSampler):
                 if self._clients_mapping[client.cid] == client_ordered_idx:
                     clients_best_velocity.append(client)
                     break
-
         # The sampled clients are the merge of the 2 lists
         selected_clients = clients_no_velocity + clients_best_velocity
+        """
         # Update the list containing the previous selected clients and init the counter for their sampling
         self._previous_selected_clients = selected_clients
         self._sampling_min_epochs_count = self.sampling_min_epochs
