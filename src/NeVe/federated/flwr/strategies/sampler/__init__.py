@@ -7,7 +7,8 @@ from NeVe.federated.flwr.strategies.sampler.velocity_sampler import VelocitySamp
 
 
 def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10,
-                       sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True) -> ClientSampler:
+                       sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True,
+                       sampling_min_epochs: int = 2, sampling_use_probability: bool = True) -> ClientSampler:
     logger = ClientSamplerLogger()
     match (sampling_method.lower()):
         case "default":
@@ -22,7 +23,9 @@ def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5, s
             sampler = VelocitySampler(logger, sampling_wait_epochs=sampling_wait_epochs,
                                       clients_sampling_percentage=sampling_percentage,
                                       sampling_velocity_aging=sampling_velocity_aging,
-                                      sampling_highest_velocity=sampling_highest_velocity)
+                                      sampling_highest_velocity=sampling_highest_velocity,
+                                      sampling_min_epochs=sampling_min_epochs,
+                                      sampling_use_probability=sampling_use_probability)
         case _:
             raise Exception(f"Client Sampler '{sampling_method.lower()}' not defined!")
     return sampler

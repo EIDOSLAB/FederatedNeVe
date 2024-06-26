@@ -12,7 +12,7 @@ class VelocitySampler(PercentageRandomSampler):
     def __init__(self, logger: ClientSamplerLogger,
                  clients_sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10,
                  sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True,
-                 sampling_min_epochs: int = 2):
+                 sampling_min_epochs: int = 2, sampling_use_probability: bool = True):
         super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage,
                          sampling_wait_epochs=sampling_wait_epochs)
         self.clients_velocity: dict[int, float] = {}
@@ -22,11 +22,11 @@ class VelocitySampler(PercentageRandomSampler):
         if not self.sampling_highest_velocity:
             self.sampling_velocity_aging *= -1
         self._previous_selected_clients = []
-        # TODO: MANAGE THIS PARAMETER, ADD IT TO ARGUMENTS.PY
         self.sampling_min_epochs = sampling_min_epochs
         if self.sampling_min_epochs < 1:
             self.sampling_min_epochs = 1
         self._sampling_min_epochs_count = self.sampling_min_epochs
+        self._sampling_use_probability = sampling_use_probability
 
     def update_clients_data(self, new_results: list[tuple[ClientProxy, FitRes]]):
         # Apply aging to all velocities BEFORE updating velocities of sampled clients
@@ -68,45 +68,45 @@ class VelocitySampler(PercentageRandomSampler):
         selected_clients = [client for client in clients if client.cid in self._clients_mapping.keys() and
                             self._clients_mapping[client.cid] not in self.clients_velocity.keys()]
 
-        if len(selected_clients) <= 0:
-            # Select remaining clients with the highest velocity until we reached the desired number of sampled clients
-            required_clients_2_sample = int(self._clients_selection_percentage * len(clients))
-
+        # Select remaining clients with the highest velocity until we reached the desired number of sampled clients
+        required_clients_2_sample = int(self._clients_selection_percentage * len(clients))
+        if len(selected_clients) < required_clients_2_sample:
             # Randomly select clients using velocity as weight
-            total_sum = sum(value for _, value in self.clients_velocity.items())
-            clients_normalized_velocity = [(idx, value / total_sum) for idx, value in self.clients_velocity.items()]
-            clients_normalized_velocity_rnd_idxs = set()
-            while len(selected_clients) < required_clients_2_sample:
-                # Generiamo un indice casuale pesato con i valori normalizzati
-                rand_idx = random.choices(
-                    range(len(clients_normalized_velocity)),
-                    [tup[1] for tup in clients_normalized_velocity]
-                )[0]
-                if rand_idx not in clients_normalized_velocity_rnd_idxs:
-                    clients_normalized_velocity_rnd_idxs.add(rand_idx)
+            if self._sampling_use_probability:
+                total_sum = sum(value for _, value in self.clients_velocity.items())
+                clients_normalized_velocity = [(idx, value / total_sum) for idx, value in self.clients_velocity.items()]
+                clients_normalized_velocity_rnd_idxs = set()
+                while len(selected_clients) < required_clients_2_sample:
+                    # Generiamo un indice casuale pesato con i valori normalizzati
+                    rand_idx = random.choices(
+                        range(len(clients_normalized_velocity)),
+                        [tup[1] for tup in clients_normalized_velocity]
+                    )[0]
+                    if rand_idx not in clients_normalized_velocity_rnd_idxs:
+                        clients_normalized_velocity_rnd_idxs.add(rand_idx)
+                        # Get the client reference from the list of clients
+                        for client in clients:
+                            if self._clients_mapping[client.cid] == rand_idx:
+                                selected_clients.append(client)
+                                break
+            # Select clients with the highest velocity
+            else:
+                clients_best_velocity = []
+                clients_ordered_by_velocity = sorted(self.clients_velocity.items(), key=lambda item: item[1],
+                                                     reverse=self.sampling_highest_velocity)
+                # Cycle all the clients, starting from the ones with the highest velocity
+                for client_ordered_idx, _ in clients_ordered_by_velocity:
+                    # If we have enough clients, skip
+                    if len(selected_clients) + len(clients_best_velocity) >= required_clients_2_sample:
+                        break
                     # Get the client reference from the list of clients
                     for client in clients:
-                        if self._clients_mapping[client.cid] == rand_idx:
-                            selected_clients.append(client)
+                        if self._clients_mapping[client.cid] == client_ordered_idx and client not in selected_clients:
+                            clients_best_velocity.append(client)
                             break
-        """
-        # Select clients with highest velocity
-        clients_best_velocity = []
-        clients_ordered_by_velocity = sorted(self.clients_velocity.items(), key=lambda item: item[1],
-                                             reverse=self.sampling_highest_velocity)
-        # Cycle all the clients, starting from the ones with the highest velocity
-        for client_ordered_idx, _ in clients_ordered_by_velocity:
-            # If we have enough clients, skip
-            if len(clients_no_velocity) + len(clients_best_velocity) >= required_clients_2_sample:
-                break
-            # Get the client reference from the list of clients
-            for client in clients:
-                if self._clients_mapping[client.cid] == client_ordered_idx:
-                    clients_best_velocity.append(client)
-                    break
-        # The sampled clients are the merge of the 2 lists
-        selected_clients = clients_no_velocity + clients_best_velocity
-        """
+                # The sampled clients are the merge of the 2 lists
+                selected_clients = selected_clients + clients_best_velocity
+
         # Update the list containing the previous selected clients and init the counter for their sampling
         self._previous_selected_clients = selected_clients
         self._sampling_min_epochs_count = self.sampling_min_epochs

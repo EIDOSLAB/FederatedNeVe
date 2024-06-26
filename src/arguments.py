@@ -82,6 +82,11 @@ def _get_federated_arguments(parser):
                         help="1 if we sample clients with highest velocity, 0 to sample with the lowest velocity.")
     parser.add_argument("--clients-sampling-wait-epochs", type=int, default=10,
                         help="Number of epochs in which we select all available clients.")
+    parser.add_argument("--clients-sampling-min-epochs", type=int, default=2,
+                        help="Number of epochs a client is at least selected for in a row.")
+    parser.add_argument("--clients-sampling-use-probability", type=int2bool, choices=[0, 1], default=True,
+                        help="1 if we sample clients randomly based on velocity, false to always select the ones "
+                             "with the highest velocity")
 
 
 def _get_client_arguments(parser):

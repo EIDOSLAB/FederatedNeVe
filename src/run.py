@@ -50,10 +50,12 @@ clients_sampling_method = "velocity"
 clients_sampling_percentage = 0.5
 clients_sampling_velocity_aging = 0.1
 clients_sampling_highest_velocity = 1
-clients_sampling_wait_epochs = 10
+clients_sampling_wait_epochs = 5
+clients_sampling_min_epochs = 2
+clients_sampling_use_probability = 1
 
 # Simulation params
-number_of_seeds = 3
+number_of_seeds = 2
 single_gpu = 1
 num_clients = 10
 
@@ -85,7 +87,9 @@ def _start_simulation(seed: int):
                       f"--clients-sampling-percentage {str(clients_sampling_percentage)} " \
                       f"--clients-sampling-wait-epochs {str(clients_sampling_wait_epochs)} " \
                       f"--clients-sampling-velocity-aging {str(clients_sampling_velocity_aging)} " \
-                      f"--clients-sampling-highest-velocity {str(clients_sampling_highest_velocity)}"
+                      f"--clients-sampling-highest-velocity {str(clients_sampling_highest_velocity)} " \
+                      f"--clients-sampling-min-epochs {str(clients_sampling_min_epochs)} " \
+                      f"--clients-sampling-use-probability {str(clients_sampling_use_probability)}"
 
     # Common params between server and client
     common_params = f"{basic_params} {data_params} {model_params} {neve_params} {clients_params} {sampling_params}"
