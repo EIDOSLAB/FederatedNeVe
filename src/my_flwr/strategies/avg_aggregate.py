@@ -7,16 +7,16 @@ from src.utils.wandb_figure import create_velocity_bar_figure
 from src.utils.wandb_figure import mplfig_2_wandbfig
 
 
-def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> Metrics:
+def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> dict:
     assert method_type in ["fit", "eval"], f"_weighted_average 'method_type' must be 'fit' or 'eval', " \
                                            f"not '{method_type}'"
+    cids = [m["client_id"] for _, m in metrics]
     if method_type == "fit":
         # Multiply accuracy of each client by number of examples used
         accuracies_top1 = [num_examples * m["accuracy_top1"] for num_examples, m in metrics]
         accuracies_top5 = [num_examples * m["accuracy_top5"] for num_examples, m in metrics]
         losses = [num_examples * m["loss"] for num_examples, m in metrics]
         examples = [num_examples for num_examples, _ in metrics]
-        cids = [m["client_id"] for _, m in metrics]
         lrs = [m["lr"] for _, m in metrics]
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
@@ -78,7 +78,11 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             "test_accuracy_top1": sum(test_accuracies_top1) / sum(test_examples),
             "test_accuracy_top5": sum(test_accuracies_top5) / sum(test_examples),
             "test_loss": sum(test_losses) / sum(test_examples),
-            'avg_confusion_matrix': avg_confusion_matrix_plt
+            'avg_confusion_matrix': avg_confusion_matrix_plt,
+            "clients": {
+                cid: {"val_accuracy_top1": val_acc_t1, "test_accuracy_top1": test_acc_t1}
+                for cid, val_acc_t1, test_acc_t1 in zip(cids, val_accuracies_top1, test_accuracies_top1)
+            }
         }
     return aggregate_data
 
@@ -140,8 +144,7 @@ def weighted_average_eval(metrics: list[tuple[int, Metrics]]) -> Metrics:
     print("Eval data to aggregate:", metrics)
     aggregate_data = _weighted_average(metrics, method_type="eval")
     print("Eval aggregation result:", aggregate_data)
-    wandb.log(
-        {
+    data_to_log = {
             "val": {
                 "accuracy": {
                     "top1": aggregate_data["val_accuracy_top1"],
@@ -156,7 +159,15 @@ def weighted_average_eval(metrics: list[tuple[int, Metrics]]) -> Metrics:
                 },
                 "loss": aggregate_data["test_loss"]
             },
-            "confusion_matrix": aggregate_data["avg_confusion_matrix"]
+            "confusion_matrix": aggregate_data["avg_confusion_matrix"],
+            "clients": {},
         }
+    for key, data in aggregate_data["clients"].items():
+        if key not in data_to_log["clients"].keys():
+            data_to_log["clients"][key] = {}
+        data_to_log["clients"][key]["val_accuracy_top1"] = data["val_accuracy_top1"]
+        data_to_log["clients"][key]["test_accuracy_top1"] = data["test_accuracy_top1"]
+    wandb.log(
+        data_to_log
     )
     return aggregate_data
