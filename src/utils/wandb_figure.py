@@ -15,6 +15,7 @@ def mplfig_2_wandbfig(figure: Figure) -> Image:
     image_stream.seek(0)
     image_array = plt.imread(image_stream)
     image_stream.close()
+    plt.close(figure)
     wandb_fig = wandb.Image(image_array)
     return wandb_fig
 
