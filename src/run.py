@@ -40,6 +40,9 @@ use_neve = 1
 neve_use_lr_scheduler = 0
 neve_only_ll = 1
 
+# Server params
+server_address = "127.0.0.1:6789"
+
 # Clients params
 clients = 10
 min_fit_clients = 10
@@ -73,8 +76,8 @@ def _prepare_dataset(seed: int):
 
 def _start_simulation(seed: int):
     # Parameters for server and clients
-    basic_params = f"--amp {str(amp)} --device {device} --batch-size {str(batch_size)} " \
-                   f"--epochs {str(epochs)} --lr {str(lr)} --seed {str(seed)}"
+    basic_params = f"--server-address {str(server_address)} --amp {str(amp)} --device {device} " \
+                   f"--batch-size {str(batch_size)} --epochs {str(epochs)} --lr {str(lr)} --seed {str(seed)}"
     data_params = f"--dataset-root {dataset_root} --dataset-name {dataset_name} --dataset-iid {str(dataset_iid)} " \
                   f"--lda-concentration {str(lda_concentration)}"
     model_params = f"--optimizer {optimizer} --scheduler-name {scheduler} --model-name {model} " \
