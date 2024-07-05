@@ -37,6 +37,8 @@ lda_concentration = 0.1
 
 # NeVe params
 use_neve = 1
+neve_multiepoch = 1
+neve_multiepoch_train_epochs = 2
 neve_use_lr_scheduler = 0
 neve_only_ll = 1
 
@@ -58,8 +60,8 @@ clients_sampling_min_epochs = 2
 clients_sampling_use_probability = 1
 
 # Simulation params
-number_of_seeds = 2
-single_gpu = 1
+number_of_seeds = 3
+num_gpus = 1
 num_clients = 10
 
 
@@ -82,8 +84,9 @@ def _start_simulation(seed: int):
                   f"--lda-concentration {str(lda_concentration)}"
     model_params = f"--optimizer {optimizer} --scheduler-name {scheduler} --model-name {model} " \
                    f"--model-use-groupnorm {str(model_use_groupnorm)}"
-    neve_params = f"--neve-active {str(use_neve)} --neve-only-ll {str(neve_only_ll)} " \
-                  f"--neve-use-lr-scheduler {str(neve_use_lr_scheduler)}"
+    neve_params = f"--neve-active {str(use_neve)} --neve-multiepoch {str(neve_multiepoch)} " \
+                  f"--neve-multiepoch-epochs {str(neve_multiepoch_train_epochs)} " \
+                  f"--neve-only-ll {str(neve_only_ll)} --neve-use-lr-scheduler {str(neve_use_lr_scheduler)}"
     clients_params = f"--num-clients {str(num_clients)} --min-fit-clients {str(min_fit_clients)} " \
                      f"--min-evaluate-clients  {str(min_eval_clients)}"
     sampling_params = f"--clients-sampling-method {clients_sampling_method} " \
@@ -122,12 +125,8 @@ def _start_simulation(seed: int):
     # Loop to start all clients
     client_processes = []
     for i in range(num_clients):
-        # If we have a single gpu set the gpu_id to 0 for all clients
-        if single_gpu == 1:
-            gpu_id = 0
-        # Otherwise, split clients between the 2 gpus
-        else:
-            gpu_id = 0 if i % 2 == 0 else 1
+        # Assign one client for each gpu
+        gpu_id = 0 if i % num_gpus == 0 else i % num_gpus
 
         if platform.system() == 'Linux':
             client_command = f"CUDA_VISIBLE_DEVICES={gpu_id} python client.py {common_params} --current-client {i}"

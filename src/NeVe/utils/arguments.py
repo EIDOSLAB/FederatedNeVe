@@ -10,6 +10,10 @@ def _int2bool(i):
 def add_neve_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--neve-active", type=_int2bool, choices=[0, 1], default=False,
                         help="NeVe - Use or not NeVe. Default False.")
+    parser.add_argument("--neve-multiepoch", type=_int2bool, choices=[0, 1], default=False,
+                        help="NeVe - Train or not for many epoch for each federated step. Default False.")
+    parser.add_argument("--neve-multiepoch-epochs", type=int, default=2,
+                        help="NeVe - How many epoch we train for each federated step. Default 2.")
     parser.add_argument("--neve-momentum", type=float, default=0.5,
                         help="NeVe - Velocity momentum.")
     parser.add_argument("--neve-epsilon", type=float, default=1e-3,

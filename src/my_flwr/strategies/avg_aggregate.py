@@ -1,10 +1,5 @@
-import numpy as np
 import wandb
 from flwr.common import Metrics
-
-from src.utils.wandb_figure import create_confusion_matrix_figure, create_distribution_figure
-from src.utils.wandb_figure import create_velocity_bar_figure
-from src.utils.wandb_figure import mplfig_2_wandbfig
 
 
 def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> dict:
@@ -39,18 +34,6 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             for client_id, neve_data in zip(cids, neve_datas):
                 print("Neve Data:", client_id, neve_data)
                 aggregate_data["neve_optimizer"][str(client_id)] = neve_data
-
-        # Plot data distributions
-        data_distributions = {}
-        for _, m in metrics:
-            if "data_distribution_count" not in m or "data_distribution_labels" not in m:
-                continue
-            data_distributions[m["client_id"]] = (
-                np.frombuffer(m["data_distribution_count"], dtype=float).tolist(),
-                np.frombuffer(m["data_distribution_labels"], dtype=int).tolist()
-            )
-        if data_distributions:
-            aggregate_data["data_distribution"] = data_distributions
     else:
         # Multiply accuracy of each client by number of examples used
         val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
@@ -62,14 +45,6 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
         test_losses = [m["test_size"] * m["test_loss"] for _, m in metrics]
         test_examples = [m["test_size"] for _, m in metrics]
 
-        # Plot confusion matrix
-        avg_matrix = np.sum([np.frombuffer(m["confusion_matrix"], dtype=float).reshape((m["confusion_matrix_shape_d0"],
-                                                                                        m["confusion_matrix_shape_d1"]))
-                             for _, m in metrics], axis=0) / len(metrics)
-
-        avg_confusion_matrix_fig = create_confusion_matrix_figure(avg_matrix, title="Average Test Confusion Matrix")
-        avg_confusion_matrix_plt = mplfig_2_wandbfig(avg_confusion_matrix_fig)
-
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
             "val_accuracy_top1": sum(val_accuracies_top1) / sum(val_examples),
@@ -78,7 +53,6 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
             "test_accuracy_top1": sum(test_accuracies_top1) / sum(test_examples),
             "test_accuracy_top5": sum(test_accuracies_top5) / sum(test_examples),
             "test_loss": sum(test_losses) / sum(test_examples),
-            'avg_confusion_matrix': avg_confusion_matrix_plt,
             "clients": {
                 cid: {"val_accuracy_top1": val_acc_t1, "test_accuracy_top1": test_acc_t1}
                 for cid, val_acc_t1, test_acc_t1 in zip(cids, val_accuracies_top1, test_accuracies_top1)
@@ -108,34 +82,10 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
                 "continue_training": 1 if client_data["neve.continue_training"] else 0,
                 "model_value": client_data["neve.model_value"],
                 "model_avg_value": client_data["neve.model_avg_value"],
-                "neurons_velocity": {}
             }
             if "neve.model_mse_value" in client_data.keys():
                 data_to_log["neve"][client_data["client_id"]]["model_mse_value"] = client_data["neve.model_mse_value"]
-
-            for key, value in client_data.items():
-                if not key.startswith("neve.neurons_velocity."):
-                    continue
-                layer_name = key.split(".")[-1]
-                np_data = np.frombuffer(value, dtype=np.float32)
-                np_neurons = [val for val in range(0, np_data.shape[0])]
-
-                distribution_fig = create_velocity_bar_figure(np_data, np_neurons,
-                                                              title=f"Client: {client_data['client_id']} - Per Neuron "
-                                                                    f"Velocity - Layer: {layer_name}")
-                neurons_fig = mplfig_2_wandbfig(distribution_fig)
-                data_to_log["neve"][client_data["client_id"]]["neurons_velocity"][f"{layer_name}"] = neurons_fig
     #
-    if "data_distribution" in aggregate_data:
-        for client_id, distribution_data in aggregate_data["data_distribution"].items():
-            if "data_distribution" not in data_to_log:
-                data_to_log["data_distribution"] = {}
-            client_distr, client_labels = distribution_data
-            # Create client classes distribution plot
-            distribution_fig = create_distribution_figure(client_distr, client_labels,
-                                                          title=f"Client.{str(client_id)} Train-set Distribution")
-            distribution_plt = mplfig_2_wandbfig(distribution_fig)
-            data_to_log["data_distribution"][f"{str(client_id)}"] = distribution_plt
     wandb.log(data_to_log, commit=False)
     return aggregate_data
 
@@ -145,23 +95,22 @@ def weighted_average_eval(metrics: list[tuple[int, Metrics]]) -> Metrics:
     aggregate_data = _weighted_average(metrics, method_type="eval")
     print("Eval aggregation result:", aggregate_data)
     data_to_log = {
-            "val": {
-                "accuracy": {
-                    "top1": aggregate_data["val_accuracy_top1"],
-                    "top5": aggregate_data["val_accuracy_top5"]
-                },
-                "loss": aggregate_data["val_loss"]
+        "val": {
+            "accuracy": {
+                "top1": aggregate_data["val_accuracy_top1"],
+                "top5": aggregate_data["val_accuracy_top5"]
             },
-            "test": {
-                "accuracy": {
-                    "top1": aggregate_data["test_accuracy_top1"],
-                    "top5": aggregate_data["test_accuracy_top5"]
-                },
-                "loss": aggregate_data["test_loss"]
+            "loss": aggregate_data["val_loss"]
+        },
+        "test": {
+            "accuracy": {
+                "top1": aggregate_data["test_accuracy_top1"],
+                "top5": aggregate_data["test_accuracy_top5"]
             },
-            "confusion_matrix": aggregate_data["avg_confusion_matrix"],
-            "clients": {},
-        }
+            "loss": aggregate_data["test_loss"]
+        },
+        "clients": {},
+    }
     for key, data in aggregate_data["clients"].items():
         if key not in data_to_log["clients"].keys():
             data_to_log["clients"][key] = {}

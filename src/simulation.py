@@ -39,6 +39,9 @@ momentum, weight_decay = 0.9, 5e-4
 amp = True
 device = "cuda"
 model_name = "resnet18"
+neve_active = False
+neve_multiepoch = False
+neve_multiepoch_epochs = 2
 neve_only_last_layer = True
 neve_use_lr_scheduler = True
 neve_use_early_stop = False
@@ -56,6 +59,8 @@ def client_fn(cid: str):
                       client_id=int(cid), model_name=model_name, device=device,
                       lr=base_lr, optimizer_name=optimizer_name,
                       momentum=momentum, weight_decay=weight_decay, amp=amp,
+                      use_neve=neve_active, use_neve_multiepoch=neve_multiepoch,
+                      neve_multiepoch_epochs=neve_multiepoch_epochs,
                       neve_use_lr_scheduler=neve_use_lr_scheduler,
                       neve_use_early_stop=neve_use_early_stop,
                       neve_momentum=neve_momentum, neve_epsilon=neve_epsilon,
@@ -68,6 +73,7 @@ def client_fn(cid: str):
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
+    global neve_active, neve_multiepoch, neve_multiepoch_epochs
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta, neve_use_early_stop
     global scheduler_name, use_disk, model_name, device, neve_only_last_layer, neve_use_lr_scheduler
     global base_lr, optimizer_name, momentum, weight_decay, amp
@@ -88,6 +94,9 @@ def main(args):
     neve_use_lr_scheduler = args.neve_use_lr_scheduler
     neve_use_early_stop = args.neve_use_early_stop
     model_name = args.model_name
+    neve_active = args.neve_active
+    neve_multiepoch = args.neve_multiepoch
+    neve_multiepoch_epochs = args.neve_multiepoch_epochs
 
     # Cleanup neve_disk_folder
     if os.path.exists(disk_folder):

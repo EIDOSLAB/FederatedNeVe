@@ -1,6 +1,5 @@
 import os.path
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -46,10 +45,6 @@ class FederatedNeVeClient(FederatedDefaultClient):
                                                      only_last_layer=neve_only_last_layer,
                                                      client_id=client_id)
 
-    def __del__(self):
-        print("FederatedNeVeClient -> Del")
-        del self.neve_scheduler
-
     def _fit_method(self, parameters, config) -> tuple[list, int, dict]:
         if not self.is_neve_setupped and self.neve_scheduler:
             # Get the velocity value before the training step (velocity at time t-1)
@@ -73,9 +68,6 @@ class FederatedNeVeClient(FederatedDefaultClient):
                 continue
             train_logs[f"neve.{key}"] = value.item()
         train_logs["neve.continue_training"] = velocity_data.continue_training
-        # Plot ad neuron velocity
-        for key, value in velocity_data.neurons_velocity.items():
-            train_logs[f"neve.neurons_velocity.{key}"] = np.float32(value.numpy()).tobytes()
         if self.continue_training:
             self.continue_training = velocity_data.continue_training
         print(f"Client: {self.client_id} - Model Avg. Velocity: {train_logs['neve.model_avg_value']}")
