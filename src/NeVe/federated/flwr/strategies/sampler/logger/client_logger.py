@@ -10,7 +10,7 @@ class ClientSamplerLogger:
         self._history_active_clients: list[list[int]] = []
         self._current_max_clients: int = 0
 
-    def log_sampled_fit_clients(self, sampled_clients: list[ClientProxy], client_mapping: dict[str, int]):
+    def update_sampled_clients(self, sampled_clients: list[ClientProxy], client_mapping: dict[str, int]):
         # Get the maximum client_id we reached (we have 1 client per client_id)
         num_clients = max([cidx for cid, cidx in client_mapping.items()]) + 1  # Clients ids starts from 0, so we add 1
         # Create a list containing for each client, (1) if it was sampled, (0) if it wasn't
@@ -20,24 +20,26 @@ class ClientSamplerLogger:
             cidx = client_mapping[sampled_client.cid]
             active_clients[cidx] = 1
 
-        # Log to wandb
-        plot, plot_data = self._make_active_clients_plot(active_clients)
-        wandb.log({
-            "selected_clients": plot,
-            "selected_clients_data": plot_data
-        }, commit=False)
-
-    def _make_active_clients_plot(self, new_active_clients: list[int]):
         # Update current max clients
-        if len(new_active_clients) > self._current_max_clients:
-            self._current_max_clients = len(new_active_clients)
+        if len(active_clients) > self._current_max_clients:
+            self._current_max_clients = len(active_clients)
             # Update old history logs with the new clients
             for history_page in self._history_active_clients:
                 while len(history_page) < self._current_max_clients:
                     history_page.append(0)  # We set 0 since these clients were never been sampled
 
         # Add new data to history
-        self._history_active_clients.append(new_active_clients)
+        self._history_active_clients.append(active_clients)
+
+    def log_sampled_fit_clients(self):
+        # Log to wandb
+        plot, plot_data = self._make_active_clients_plot()
+        wandb.log({
+            "selected_clients": plot,
+            "selected_clients_data": plot_data
+        }, commit=False)
+
+    def _make_active_clients_plot(self):
         history_active_clients_data = np.array(self._history_active_clients).transpose()
 
         # Init the image with a dynamic size depending on the number of epochs

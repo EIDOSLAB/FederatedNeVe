@@ -97,7 +97,6 @@ class FedNeVeAvg(FedAvg):
             failures: list[tuple[ClientProxy, FitRes] | BaseException],
     ) -> tuple[Parameters | None, dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
-        self.current_epoch += 1
         if not results:
             return None, {}
         # Do not aggregate if there are failures and failures are not accepted
@@ -116,6 +115,7 @@ class FedNeVeAvg(FedAvg):
             self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
         """Configure the next round of training."""
+        self.current_epoch += 1
         config = {}
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
