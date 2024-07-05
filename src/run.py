@@ -114,6 +114,8 @@ def _start_simulation(seed: int):
     else:
         wandb_tags += " IID"
     wandb_tags += f" WAIT-EPOCHS_{str(clients_sampling_wait_epochs)}"
+    if neve_multiepoch == 1:
+      wandb_tags += f" NEVE-MULTIEPOCHS_{str(neve_multiepoch_train_epochs)}"
 
     # Start the server
     server_command = f"python server.py {common_params} {wandb_tags}"
