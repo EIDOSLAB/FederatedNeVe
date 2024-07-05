@@ -44,7 +44,6 @@ class FederatedNeVeMultiEpochClient(FederatedNeVeClient):
                 return [], len(self.train_loader), {}
             else:
                 params, len_ds, train_logs = super()._fit_method(parameters, config)
-            train_logs[f"epoch_{epoch}"] = {}
             # Get the velocity value after the training step (velocity at time t)
             with self.neve_scheduler:
                 _ = run(self.model, self.aux_loader, None, self.scaler, self.device, self.amp, self.epoch, "Aux")
@@ -53,12 +52,12 @@ class FederatedNeVeMultiEpochClient(FederatedNeVeClient):
             for key, value in velocity_data.as_dict["neve"].items():
                 if isinstance(value, dict):
                     continue
-                train_logs[f"epoch_{epoch}"][f"neve.{key}"] = value.item()
+                train_logs[f"epoch_{epoch}.neve.{key}"] = value.item()
                 train_logs[f"neve.{key}"] = value.item()
-            train_logs[f"epoch_{epoch}"]["neve.continue_training"] = velocity_data.continue_training
+            train_logs[f"epoch_{epoch}.neve.continue_training"] = velocity_data.continue_training
             if self.continue_training:
                 self.continue_training = velocity_data.continue_training
             print(f"Client: {self.client_id} - Model Avg. Velocity: "
-                  f"{train_logs[f'epoch_{epoch}']['neve.model_avg_value']}")
+                  f"{train_logs[f'epoch_{epoch}.neve.model_avg_value']}")
             print(f"Client: {self.client_id} - Continue training? {self.continue_training}")
         return params, len_ds, train_logs
