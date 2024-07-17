@@ -39,8 +39,9 @@ lda_concentration = 0.1
 use_neve = 1
 neve_multiepoch = 1
 neve_multiepoch_train_epochs = 2
-neve_use_lr_scheduler = 0
+neve_use_lr_scheduler = 1
 neve_only_ll = 1
+neve_delta = 20  # Default 10
 
 # Server params
 server_address = "127.0.0.1:6789"
@@ -51,12 +52,12 @@ min_fit_clients = 10
 min_eval_clients = 10
 
 # Clients sampling params
-clients_sampling_method = "velocity"
+clients_sampling_method = "velocity"  # percentage_random percentage_groups velocity
 clients_sampling_percentage = 0.5
 clients_sampling_velocity_aging = 0.1
 clients_sampling_highest_velocity = 1
 clients_sampling_wait_epochs = 5
-clients_sampling_min_epochs = 2
+clients_sampling_min_epochs = 1
 clients_sampling_use_probability = 1
 
 # Simulation params
@@ -84,9 +85,6 @@ def _start_simulation(seed: int):
                   f"--lda-concentration {str(lda_concentration)}"
     model_params = f"--optimizer {optimizer} --scheduler-name {scheduler} --model-name {model} " \
                    f"--model-use-groupnorm {str(model_use_groupnorm)}"
-    neve_params = f"--neve-active {str(use_neve)} --neve-multiepoch {str(neve_multiepoch)} " \
-                  f"--neve-multiepoch-epochs {str(neve_multiepoch_train_epochs)} " \
-                  f"--neve-only-ll {str(neve_only_ll)} --neve-use-lr-scheduler {str(neve_use_lr_scheduler)}"
     clients_params = f"--num-clients {str(num_clients)} --min-fit-clients {str(min_fit_clients)} " \
                      f"--min-evaluate-clients  {str(min_eval_clients)}"
     sampling_params = f"--clients-sampling-method {clients_sampling_method} " \
@@ -96,6 +94,10 @@ def _start_simulation(seed: int):
                       f"--clients-sampling-highest-velocity {str(clients_sampling_highest_velocity)} " \
                       f"--clients-sampling-min-epochs {str(clients_sampling_min_epochs)} " \
                       f"--clients-sampling-use-probability {str(clients_sampling_use_probability)}"
+    neve_params = f"--neve-active {str(use_neve)} --neve-multiepoch {str(neve_multiepoch)} " \
+                  f"--neve-multiepoch-epochs {str(neve_multiepoch_train_epochs)} " \
+                  f"--neve-only-ll {str(neve_only_ll)} --neve-use-lr-scheduler {str(neve_use_lr_scheduler)} " \
+                  f"--neve-delta {str(neve_delta)}"
 
     # Common params between server and client
     common_params = f"{basic_params} {data_params} {model_params} {neve_params} {clients_params} {sampling_params}"
@@ -115,7 +117,7 @@ def _start_simulation(seed: int):
         wandb_tags += " IID"
     wandb_tags += f" WAIT-EPOCHS_{str(clients_sampling_wait_epochs)}"
     if neve_multiepoch == 1:
-      wandb_tags += f" NEVE-MULTIEPOCHS_{str(neve_multiepoch_train_epochs)}"
+        wandb_tags += f" NEVE-MULTIEPOCHS_{str(neve_multiepoch_train_epochs)}"
 
     # Start the server
     server_command = f"python server.py {common_params} {wandb_tags}"
