@@ -36,6 +36,8 @@ def _get_default_arguments(parser):
                         help="Number of training epochs.")
     parser.add_argument("--lr", type=float, default=0.001,
                         help="Optimizer starting learning rate.")
+    parser.add_argument("--min-lr", type=float, default=0.00001,
+                        help="Optimizer minimum learning rate.")
     parser.add_argument("--momentum", type=float, default=0.9,
                         help="Optimizer momentum.")
     parser.add_argument("--weight-decay", type=float, default=5e-4,

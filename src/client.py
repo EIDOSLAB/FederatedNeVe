@@ -44,6 +44,7 @@ def main(args):
                         use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups,
                         model_name=args.model_name, device=device,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
+                        min_lr=args.min_lr,
                         use_neve=args.neve_active, use_neve_multiepoch=args.neve_multiepoch,
                         neve_multiepoch_epochs=args.neve_multiepoch_epochs,
                         neve_use_lr_scheduler=args.neve_use_lr_scheduler,

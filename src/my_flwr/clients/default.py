@@ -16,7 +16,8 @@ class AFederatedClient(ABC):
                  use_groupnorm: bool = True, groupnorm_channels: int = 2,
                  model_name: str = "resnet18", device: str = "cuda",
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
-                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
+                 lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9, weight_decay: float = 5e-4,
+                 amp: bool = True,
                  scheduler_name: str = "baseline", client_id: int = 0,
                  use_disk: bool = False, disk_folder: str = "../fclients_data/"):
         self.device = device
@@ -36,7 +37,7 @@ class AFederatedClient(ABC):
         self.optimizer = get_optimizer(self.model, opt_name=optimizer_name, starting_lr=self.lr,
                                        momentum=self.momentum, weight_decay=self.weight_decay)
         self.scheduler = get_scheduler(self.model, optimizer=self.optimizer, scheduler_name=scheduler_name,
-                                       dataset=dataset_name)
+                                       dataset=dataset_name, min_lr=min_lr)
         self.scaler = torch.cuda.amp.GradScaler(enabled=(self.device == "cuda" and self.amp))
 
     def get_parameters(self, config):

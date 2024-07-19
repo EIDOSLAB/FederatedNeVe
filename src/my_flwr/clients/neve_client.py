@@ -15,7 +15,8 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  use_groupnorm: bool = True, groupnorm_channels: int = 2,
                  model_name: str = "resnet18", device: str = "cuda",
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
-                 lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4, amp: bool = True,
+                 lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9, weight_decay: float = 5e-4,
+                 amp: bool = True,
                  scheduler_name: str = "neve", client_id: int = 0,
                  neve_use_lr_scheduler: bool = True, neve_use_early_stop: bool = False,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
@@ -24,7 +25,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
                          use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
                          model_name=model_name, device=device,
                          dataset_name=dataset_name, optimizer_name=optimizer_name,
-                         lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
+                         lr=lr, min_lr=min_lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
                          scheduler_name=scheduler_name, client_id=client_id,
                          use_disk=use_disk, disk_folder=disk_folder)
 
@@ -35,7 +36,8 @@ class FederatedNeVeClient(FederatedDefaultClient):
         self.neve_use_lr_scheduler: bool = neve_use_lr_scheduler
         lr_scheduler = None
         if neve_use_lr_scheduler:
-            lr_scheduler = ReduceLROnLocalPlateau(self.optimizer, factor=neve_alpha, patience=neve_delta)
+            lr_scheduler = ReduceLROnLocalPlateau(self.optimizer, min_lr=min_lr,
+                                                  factor=neve_alpha, patience=neve_delta)
             self.scheduler = None
         self.neve_scheduler = FederatedNeVeScheduler(self.model,
                                                      lr_scheduler=lr_scheduler,

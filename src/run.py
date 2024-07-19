@@ -22,6 +22,7 @@ device = "cuda"
 batch_size = 100
 epochs = 250
 lr = 0.001
+min_lr = 0.00001
 
 # Model and relative utils params
 model = "resnet18"
@@ -79,8 +80,8 @@ def _prepare_dataset(seed: int):
 
 def _start_simulation(seed: int):
     # Parameters for server and clients
-    basic_params = f"--server-address {str(server_address)} --amp {str(amp)} --device {device} " \
-                   f"--batch-size {str(batch_size)} --epochs {str(epochs)} --lr {str(lr)} --seed {str(seed)}"
+    basic_params = f"--server-address {str(server_address)} --amp {str(amp)} --device {device} --seed {str(seed)} " \
+                   f"--batch-size {str(batch_size)} --epochs {str(epochs)} --lr {str(lr)} --min-lr {str(min_lr)}"
     data_params = f"--dataset-root {dataset_root} --dataset-name {dataset_name} --dataset-iid {str(dataset_iid)} " \
                   f"--lda-concentration {str(lda_concentration)}"
     model_params = f"--optimizer {optimizer} --scheduler-name {scheduler} --model-name {model} " \

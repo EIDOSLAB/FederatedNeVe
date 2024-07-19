@@ -7,7 +7,8 @@ from src.my_flwr.clients.neve_client import FederatedNeVeClient
 
 def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader | None,
                use_groupnorm: bool = True, groupnorm_channels: int = 2, optimizer_name: str = "sgd",
-               dataset_name: str = "cifar10", lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4,
+               dataset_name: str = "cifar10", lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9,
+               weight_decay: float = 5e-4,
                amp: bool = True, client_id: int = 0, model_name: str = "resnet18", device: str = "cuda",
                use_neve: bool = False, use_neve_multiepoch: bool = False, neve_multiepoch_epochs: int = 2,
                neve_use_lr_scheduler: bool = True, neve_use_early_stop: bool = False,
@@ -24,6 +25,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                 scheduler_name=scheduler_name,
                 dataset_name=dataset_name, optimizer_name=optimizer_name,
                 lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
+                min_lr=min_lr,
                 num_train_epochs=neve_multiepoch_epochs,
                 neve_use_lr_scheduler=neve_use_lr_scheduler,
                 neve_use_early_stop=neve_use_early_stop,
@@ -39,6 +41,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                                        scheduler_name=scheduler_name,
                                        dataset_name=dataset_name, optimizer_name=optimizer_name,
                                        lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
+                                       min_lr=min_lr,
                                        neve_use_lr_scheduler=neve_use_lr_scheduler,
                                        neve_use_early_stop=neve_use_early_stop,
                                        neve_epsilon=neve_epsilon, neve_momentum=neve_momentum,
@@ -50,6 +53,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                                       use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
                                       model_name=model_name, device=device,
                                       scheduler_name=scheduler_name,
+                                      min_lr=min_lr,
                                       dataset_name=dataset_name, optimizer_name=optimizer_name,
                                       lr=lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
                                       client_id=client_id, use_disk=use_disk, disk_folder=disk_folder)
