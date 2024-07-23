@@ -9,15 +9,17 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
     if method_type == "fit":
         # Multiply accuracy of each client by number of examples used
         accuracies_top1 = [num_examples * m["accuracy_top1"] for num_examples, m in metrics]
-        accuracies_top5 = [num_examples * m["accuracy_top5"] for num_examples, m in metrics]
         losses = [num_examples * m["loss"] for num_examples, m in metrics]
         examples = [num_examples for num_examples, _ in metrics]
         lrs = [m["lr"] for _, m in metrics]
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
             "accuracy_top1": sum(accuracies_top1) / sum(examples),
-            "accuracy_top5": sum(accuracies_top5) / sum(examples),
-            "loss": sum(losses) / sum(examples), "lr": {}
+            "loss": sum(losses) / sum(examples),
+            "lr": {},
+            "clients": {
+                cid: {"train_accuracy_top1": train_acc_t1} for cid, train_acc_t1 in zip(cids, accuracies_top1)
+            }
         }
         for client_id, lr in zip(cids, lrs):
             print("LR:", client_id, lr)
@@ -36,22 +38,18 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
                 aggregate_data["neve_optimizer"][str(client_id)] = neve_data
     else:
         # Multiply accuracy of each client by number of examples used
-        val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
-        val_accuracies_top5 = [m["val_size"] * m["val_accuracy_top5"] for _, m in metrics]
-        val_losses = [m["val_size"] * m["val_loss"] for _, m in metrics]
-        val_examples = [m["val_size"] for _, m in metrics]
-        test_accuracies_top1 = [m["test_size"] * m["test_accuracy_top1"] for _, m in metrics]
-        test_accuracies_top5 = [m["test_size"] * m["test_accuracy_top5"] for _, m in metrics]
-        test_losses = [m["test_size"] * m["test_loss"] for _, m in metrics]
-        test_examples = [m["test_size"] for _, m in metrics]
+        val_accuracies_top1 = [num_examples * m["val_accuracy_top1"] for num_examples, m in metrics]
+        val_losses = [num_examples * m["val_loss"] for num_examples, m in metrics]
+        val_examples = [num_examples for num_examples, _ in metrics]
+        test_accuracies_top1 = [num_examples * m["test_accuracy_top1"] for num_examples, m in metrics]
+        test_losses = [num_examples * m["test_loss"] for num_examples, m in metrics]
+        test_examples = [num_examples for num_examples, _ in metrics]
 
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
             "val_accuracy_top1": sum(val_accuracies_top1) / sum(val_examples),
-            "val_accuracy_top5": sum(val_accuracies_top5) / sum(val_examples),
             "val_loss": sum(val_losses) / sum(val_examples),
             "test_accuracy_top1": sum(test_accuracies_top1) / sum(test_examples),
-            "test_accuracy_top5": sum(test_accuracies_top5) / sum(test_examples),
             "test_loss": sum(test_losses) / sum(test_examples),
             "clients": {
                 cid: {"val_accuracy_top1": val_acc_t1, "test_accuracy_top1": test_acc_t1}
@@ -69,11 +67,17 @@ def weighted_average_fit(metrics: list[tuple[int, Metrics]]) -> Metrics:
         "train": {
             "accuracy": {
                 "top1": aggregate_data["accuracy_top1"],
-                "top5": aggregate_data["accuracy_top5"]
             },
             "loss": aggregate_data["loss"]},
-        "lr": {client_id: lr for client_id, lr in aggregate_data["lr"].items()}
+        "lr": {client_id: lr for client_id, lr in aggregate_data["lr"].items()},
+        "clients": {},
     }
+    # Update each client train accuracy
+    for key, data in aggregate_data["clients"].items():
+        if key not in data_to_log["clients"].keys():
+            data_to_log["clients"][key] = {}
+        data_to_log["clients"][key]["train_accuracy_top1"] = data["train_accuracy_top1"]
+    # Update each client neve data
     for _, client_data in metrics:
         if "neve.continue_training" in client_data.keys():
             if "neve" not in data_to_log.keys():
@@ -98,19 +102,18 @@ def weighted_average_eval(metrics: list[tuple[int, Metrics]]) -> Metrics:
         "val": {
             "accuracy": {
                 "top1": aggregate_data["val_accuracy_top1"],
-                "top5": aggregate_data["val_accuracy_top5"]
             },
             "loss": aggregate_data["val_loss"]
         },
         "test": {
             "accuracy": {
                 "top1": aggregate_data["test_accuracy_top1"],
-                "top5": aggregate_data["test_accuracy_top5"]
             },
             "loss": aggregate_data["test_loss"]
         },
         "clients": {},
     }
+    # Update each client val & test accuracy
     for key, data in aggregate_data["clients"].items():
         if key not in data_to_log["clients"].keys():
             data_to_log["clients"][key] = {}

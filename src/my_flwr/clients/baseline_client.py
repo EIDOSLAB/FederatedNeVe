@@ -19,13 +19,12 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
                              self.amp, epoch=self.epoch, run_type="Train")
         # Unwrap training stats
         loss = training_stats["loss"]
-        accuracy_1, accuracy_5 = training_stats["accuracy"]["top1"], training_stats["accuracy"]["top5"]
+        accuracy_1 = training_stats["accuracy"]["top1"]
 
         # Return stats in a structured way
         results_data = {
             "loss": float(loss),
             "accuracy_top1": float(accuracy_1),
-            "accuracy_top5": float(accuracy_5),
             "client_id": self.client_id,
             "lr": self.optimizer.param_groups[0]["lr"],
         }
@@ -36,25 +35,23 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
         stats = run(self.model, self.valid_loader, None, self.scaler, self.device,
                     self.amp, epoch=self.epoch, run_type="Validation")
         val_loss = stats["loss"]
-        val_acc_1, val_acc_5 = stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        val_acc_1 = stats["accuracy"]["top1"]
 
         # Validate the model on the test-set
         stats = run(self.model, self.test_loader, None, self.scaler, self.device,
                     self.amp, epoch=self.epoch, run_type="Test")
         test_loss = stats["loss"]
-        test_acc_1, test_acc_5 = stats["accuracy"]["top1"], stats["accuracy"]["top5"]
+        test_acc_1 = stats["accuracy"]["top1"]
 
         # Return stats in a structured way
         results_data = {
             # Validation
             "val_loss": float(val_loss),
             "val_accuracy_top1": float(val_acc_1),
-            "val_accuracy_top5": float(val_acc_5),
             "val_size": len(self.valid_loader),
             # Test
             "test_loss": float(test_loss),
             "test_accuracy_top1": float(test_acc_1),
-            "test_accuracy_top5": float(test_acc_5),
             "test_size": len(self.test_loader),
             # Other info
             "client_id": self.client_id,
