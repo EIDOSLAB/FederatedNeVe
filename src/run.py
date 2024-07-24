@@ -26,7 +26,7 @@ min_lr = 0.00001
 
 # Model and relative utils params
 model = "resnet18"
-pretrain = True  # Default is False
+pretrain = 1  # Default is 0 -> False
 model_use_groupnorm = 1
 optimizer = "sgd"
 scheduler = "baseline"
@@ -114,6 +114,8 @@ def _start_simulation(seed: int):
             wandb_tags += "HIGHEST"
         else:
             wandb_tags += "LOWEST"
+    if pretrain:
+        wandb_tags += " MODEL_PRETRAINED"
     if dataset_iid == 0:
         wandb_tags += f" NON-IID LDA-CONCENTRATION_{str(lda_concentration)}"
     else:
