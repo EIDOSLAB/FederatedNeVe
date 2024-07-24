@@ -26,6 +26,7 @@ def main(args):
     set_seeds(args.seed)
 
     model, num_classes = get_model(dataset=args.dataset_name, model_name=args.model_name, device=args.device,
+                                   use_pretrain=args.use_pretrain,
                                    use_groupnorm=args.model_use_groupnorm,
                                    groupnorm_channels=args.model_groupnorm_groups)
     optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,

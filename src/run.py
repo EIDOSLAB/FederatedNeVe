@@ -26,6 +26,7 @@ min_lr = 0.00001
 
 # Model and relative utils params
 model = "resnet18"
+pretrain = True  # Default is False
 model_use_groupnorm = 1
 optimizer = "sgd"
 scheduler = "baseline"
@@ -42,7 +43,8 @@ neve_multiepoch = 1
 neve_multiepoch_train_epochs = 2
 neve_use_lr_scheduler = 1
 neve_only_ll = 1
-neve_delta = 20  # Default 10
+neve_alpha = 0.5  # LR rescaling factor. Default 0.5
+neve_delta = 40  # LR patience. Default 10
 
 # Server params
 server_address = "127.0.0.1:6789"
@@ -85,7 +87,7 @@ def _start_simulation(seed: int):
     data_params = f"--dataset-root {dataset_root} --dataset-name {dataset_name} --dataset-iid {str(dataset_iid)} " \
                   f"--lda-concentration {str(lda_concentration)}"
     model_params = f"--optimizer {optimizer} --scheduler-name {scheduler} --model-name {model} " \
-                   f"--model-use-groupnorm {str(model_use_groupnorm)}"
+                   f"--use-pretrain {str(pretrain)} --model-use-groupnorm {str(model_use_groupnorm)}"
     clients_params = f"--num-clients {str(num_clients)} --min-fit-clients {str(min_fit_clients)} " \
                      f"--min-evaluate-clients  {str(min_eval_clients)}"
     sampling_params = f"--clients-sampling-method {clients_sampling_method} " \
@@ -98,7 +100,7 @@ def _start_simulation(seed: int):
     neve_params = f"--neve-active {str(use_neve)} --neve-multiepoch {str(neve_multiepoch)} " \
                   f"--neve-multiepoch-epochs {str(neve_multiepoch_train_epochs)} " \
                   f"--neve-only-ll {str(neve_only_ll)} --neve-use-lr-scheduler {str(neve_use_lr_scheduler)} " \
-                  f"--neve-delta {str(neve_delta)}"
+                  f"--neve-alpha {str(neve_alpha)} --neve-delta {str(neve_delta)}"
 
     # Common params between server and client
     common_params = f"{basic_params} {data_params} {model_params} {neve_params} {clients_params} {sampling_params}"

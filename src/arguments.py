@@ -20,6 +20,8 @@ def _get_default_arguments(parser):
     parser.add_argument("--model-name", type=str, default="resnet18",
                         choices=["resnet18", "efficientnet_b0"],
                         help="Name of the model to train.")
+    parser.add_argument("--use-pretrain", type=int2bool, choices=[0, 1], default=False,
+                        help="True to use a pretrained model, False to train from scratch. Default is False.")
     parser.add_argument("--model-use-groupnorm", type=int2bool, choices=[0, 1], default=True,
                         help="Use groupnorm rather than layernorm/batchnorm in the model")
     parser.add_argument("--model-groupnorm-groups", type=int, default=2,

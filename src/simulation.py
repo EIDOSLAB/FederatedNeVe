@@ -39,6 +39,7 @@ momentum, weight_decay = 0.9, 5e-4
 amp = True
 device = "cuda"
 model_name = "resnet18"
+use_pretrain = False
 neve_active = False
 neve_multiepoch = False
 neve_multiepoch_epochs = 2
@@ -56,6 +57,7 @@ def client_fn(cid: str):
     aux_loader = aux_loaders[int(cid) % len(aux_loaders)]
     return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name=dataset_name,
                       use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                      use_pretrain=use_pretrain,
                       client_id=int(cid), model_name=model_name, device=device,
                       lr=base_lr, optimizer_name=optimizer_name,
                       momentum=momentum, weight_decay=weight_decay, amp=amp,
@@ -75,7 +77,7 @@ def main(args):
     global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
     global neve_active, neve_multiepoch, neve_multiepoch_epochs
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta, neve_use_early_stop
-    global scheduler_name, use_disk, model_name, device, neve_only_last_layer, neve_use_lr_scheduler
+    global scheduler_name, use_disk, model_name, use_pretrain, device, neve_only_last_layer, neve_use_lr_scheduler
     global base_lr, optimizer_name, momentum, weight_decay, amp
     neve_epsilon = args.neve_epsilon
     neve_momentum = args.neve_momentum
@@ -84,6 +86,7 @@ def main(args):
     dataset_name = args.dataset_name.lower()
     use_groupnorm = args.model_use_groupnorm
     groupnorm_channels = args.model_groupnorm_groups
+    use_pretrain = args.use_pretrain
     scheduler_name = args.scheduler_name
     use_disk = True
     base_lr = args.lr

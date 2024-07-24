@@ -7,6 +7,7 @@ from src.my_flwr.clients.neve_client import FederatedNeVeClient
 
 def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: DataLoader, aux_loader: DataLoader | None,
                use_groupnorm: bool = True, groupnorm_channels: int = 2, optimizer_name: str = "sgd",
+               use_pretrain: bool = False,
                dataset_name: str = "cifar10", lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9,
                weight_decay: float = 5e-4,
                amp: bool = True, client_id: int = 0, model_name: str = "resnet18", device: str = "cuda",
@@ -21,6 +22,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
                 train_loader=train_loader, valid_loader=val_loader, test_loader=test_loader,
                 aux_loader=aux_loader,
                 use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                use_pretrain=use_pretrain,
                 model_name=model_name, device=device,
                 scheduler_name=scheduler_name,
                 dataset_name=dataset_name, optimizer_name=optimizer_name,
@@ -37,6 +39,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
             return FederatedNeVeClient(train_loader=train_loader, valid_loader=val_loader, test_loader=test_loader,
                                        aux_loader=aux_loader,
                                        use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                                       use_pretrain=use_pretrain,
                                        model_name=model_name, device=device,
                                        scheduler_name=scheduler_name,
                                        dataset_name=dataset_name, optimizer_name=optimizer_name,
@@ -51,6 +54,7 @@ def get_client(train_loader: DataLoader, val_loader: DataLoader, test_loader: Da
     else:
         return FederatedDefaultClient(train_loader=train_loader, valid_loader=val_loader, test_loader=test_loader,
                                       use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                                      use_pretrain=use_pretrain,
                                       model_name=model_name, device=device,
                                       scheduler_name=scheduler_name,
                                       min_lr=min_lr,

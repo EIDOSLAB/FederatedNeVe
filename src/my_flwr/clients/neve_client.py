@@ -13,6 +13,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
     def __init__(self, train_loader: DataLoader, valid_loader: DataLoader, test_loader: DataLoader,
                  aux_loader: DataLoader,
                  use_groupnorm: bool = True, groupnorm_channels: int = 2,
+                 use_pretrain: bool = False,
                  model_name: str = "resnet18", device: str = "cuda",
                  dataset_name: str = "cifar10", optimizer_name: str = "sgd",
                  lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9, weight_decay: float = 5e-4,
@@ -23,6 +24,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  neve_only_last_layer: bool = False, use_disk: bool = False, disk_folder: str = "../fclients_data/"):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                          use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                         use_pretrain=use_pretrain,
                          model_name=model_name, device=device,
                          dataset_name=dataset_name, optimizer_name=optimizer_name,
                          lr=lr, min_lr=min_lr, momentum=momentum, weight_decay=weight_decay, amp=amp,

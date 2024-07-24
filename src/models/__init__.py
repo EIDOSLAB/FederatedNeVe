@@ -4,6 +4,7 @@ from src.models.federated_model import get_resnet_model, get_efficientnet_model
 
 
 def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cuda",
+              use_pretrain: bool = False,
               use_groupnorm=True, groupnorm_channels: int = 2) -> tuple[nn.Module, int]:
     match (dataset.lower()):
         case "emnist":
@@ -15,14 +16,14 @@ def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cu
         case _:
             raise Exception(f"Dataset '{dataset}' does not exist.")
     if "efficientnet" in model_name.lower():
-        model = get_efficientnet_model(num_classes=num_classes, model_name=model_name,
+        model = get_efficientnet_model(num_classes=num_classes, model_name=model_name, use_pretrain=use_pretrain,
                                        use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
     elif "resnet" in model_name.lower():
-        model = get_resnet_model(num_classes=num_classes, model_name=model_name,
+        model = get_resnet_model(num_classes=num_classes, model_name=model_name, use_pretrain=use_pretrain,
                                  use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
     else:
         print(f"Model with name: {model_name} is not managed. A ResNet18 will be used instead.")
-        model = get_resnet_model(num_classes=num_classes, model_name="resnet18",
+        model = get_resnet_model(num_classes=num_classes, model_name="resnet18", use_pretrain=use_pretrain,
                                  use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
     model.to(device)
     return model, num_classes

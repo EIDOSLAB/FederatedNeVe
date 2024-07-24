@@ -42,6 +42,7 @@ def main(args):
     # Define Client
     client = get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=args.dataset_name,
                         use_groupnorm=args.model_use_groupnorm, groupnorm_channels=args.model_groupnorm_groups,
+                        use_pretrain=args.use_pretrain,
                         model_name=args.model_name, device=device,
                         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
                         min_lr=args.min_lr,
