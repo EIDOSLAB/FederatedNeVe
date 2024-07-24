@@ -38,12 +38,12 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
                 aggregate_data["neve_optimizer"][str(client_id)] = neve_data
     else:
         # Multiply accuracy of each client by number of examples used
-        val_accuracies_top1 = [num_examples * m["val_accuracy_top1"] for num_examples, m in metrics]
-        val_losses = [num_examples * m["val_loss"] for num_examples, m in metrics]
-        val_examples = [num_examples for num_examples, _ in metrics]
-        test_accuracies_top1 = [num_examples * m["test_accuracy_top1"] for num_examples, m in metrics]
-        test_losses = [num_examples * m["test_loss"] for num_examples, m in metrics]
-        test_examples = [num_examples for num_examples, _ in metrics]
+        val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
+        val_losses = [m["val_size"] * m["val_loss"] for _, m in metrics]
+        val_examples = [m["val_size"] for _, m in metrics]
+        test_accuracies_top1 = [m["test_size"] * m["test_accuracy_top1"] for _, m in metrics]
+        test_losses = [m["test_size"] * m["test_loss"] for _, m in metrics]
+        test_examples = [m["test_size"] for _, m in metrics]
 
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {

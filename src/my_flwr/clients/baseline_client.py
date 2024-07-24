@@ -32,16 +32,16 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
 
     def _evaluate_method(self, parameters, config) -> tuple[float, int, dict]:
         # Validate the model on the validation-set
-        stats = run(self.model, self.valid_loader, None, self.scaler, self.device,
-                    self.amp, epoch=self.epoch, run_type="Validation")
-        val_loss = stats["loss"]
-        val_acc_1 = stats["accuracy"]["top1"]
+        val_stats = run(self.model, self.valid_loader, None, self.scaler, self.device,
+                        self.amp, epoch=self.epoch, run_type="Validation")
+        val_loss = val_stats["loss"]
+        val_acc_1 = val_stats["accuracy"]["top1"]
 
         # Validate the model on the test-set
-        stats = run(self.model, self.test_loader, None, self.scaler, self.device,
-                    self.amp, epoch=self.epoch, run_type="Test")
-        test_loss = stats["loss"]
-        test_acc_1 = stats["accuracy"]["top1"]
+        test_stats = run(self.model, self.test_loader, None, self.scaler, self.device,
+                         self.amp, epoch=self.epoch, run_type="Test")
+        test_loss = test_stats["loss"]
+        test_acc_1 = test_stats["accuracy"]["top1"]
 
         # Return stats in a structured way
         results_data = {
