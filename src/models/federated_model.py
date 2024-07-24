@@ -18,10 +18,11 @@ def get_resnet_model(num_classes: int = 10, model_name: str = "resnet18", use_pr
     Returns:
         Module: ResNet18 network.
     """
+    model: ResNet = resnet18(num_classes=num_classes)
     if use_pretrain:
-        model: ResNet = resnet18(num_classes=num_classes, weights=ResNet18_Weights.IMAGENET1K_V1)
-    else:
-        model: ResNet = resnet18(num_classes=num_classes)
+        model_pret: ResNet = resnet18(num_classes=1000, weights=ResNet18_Weights.IMAGENET1K_V1)
+        model_pret.fc = model.fc
+        model = model_pret
     if use_groupnorm:
         model = batch_norm_to_group_norm(model, groupnorm_channels)
     return model
@@ -41,10 +42,11 @@ def get_efficientnet_model(num_classes: int = 10, model_name: str = "efficientne
     Returns:
         Module: Efficientnet network.
     """
+    model: EfficientNet = efficientnet_b0(num_classes=num_classes)
     if use_pretrain:
-        model: EfficientNet = efficientnet_b0(num_classes=num_classes, weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
-    else:
-        model: EfficientNet = efficientnet_b0(num_classes=num_classes)
+        model_pret: EfficientNet = efficientnet_b0(num_classes=1000, weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+        model_pret.classifier = model.classifier
+        model = model_pret
     if use_groupnorm:
         model = batch_norm_to_group_norm(model, groupnorm_channels)
     return model
