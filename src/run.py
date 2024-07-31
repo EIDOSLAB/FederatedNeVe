@@ -33,7 +33,7 @@ scheduler = "baseline"
 
 # Data params
 dataset_root = "../datasets"
-dataset_name = "cifar10"
+dataset_names = ["cifar10"]
 dataset_iid = 0
 lda_concentration = 0.1
 
@@ -41,22 +41,22 @@ lda_concentration = 0.1
 use_neve = 1
 neve_multiepoch = 1
 neve_multiepoch_train_epochs = 2
-neve_use_lr_scheduler = 1
+neve_use_lr_scheduler = 0
 neve_only_ll = 1
 neve_alpha = 0.5  # LR rescaling factor. Default 0.5
-neve_delta = 40  # LR patience. Default 10
+neve_delta = 10  # LR patience. Default 10
 
 # Server params
 server_address = "127.0.0.1:6789"
 
 # Clients params
-clients = 10
-min_fit_clients = 10
-min_eval_clients = 10
+clients_list = [10, 20, 50, 100]
+min_fit_clients = -1
+min_eval_clients = -1
 
 # Clients sampling params
-clients_sampling_method = "velocity"  # percentage_random percentage_groups velocity
-clients_sampling_percentage = 0.5
+clients_sampling_methods = ["percentage_random", "velocity"]  # percentage_random percentage_groups velocity
+clients_sampling_percentages = [0.1, 0.3, 0.5]
 clients_sampling_velocity_aging = 0.1
 clients_sampling_highest_velocity = 1
 clients_sampling_wait_epochs = 5
@@ -66,21 +66,20 @@ clients_sampling_use_probability = 1
 # Simulation params
 number_of_seeds = 3
 num_gpus = 1
-num_clients = 10
 
 
-def _prepare_dataset(seed: int):
+def _prepare_dataset(seed: int, dataset_name: str, num_clients: int):
     print("Preparazione dataset per il training federato...")
-    split_iid = True if dataset_iid == 1 else False
     # Load data
     train, test, aux = get_dataset(dataset_root, dataset_name)
     _ = prepare_data(dataset_root, dataset_name, train, test, aux,
-                     split_iid=split_iid, num_clients=num_clients,
+                     split_iid=dataset_iid == 1, num_clients=num_clients,
                      concentration=lda_concentration, seed=seed, batch_size=batch_size)
     print("Preparazione dataset per il training federato completata.")
 
 
-def _start_simulation(seed: int):
+def _start_simulation(seed: int, dataset_name: str, num_clients: int,
+                      clients_sampling_method: str, clients_sampling_percentage: float):
     # Parameters for server and clients
     basic_params = f"--server-address {str(server_address)} --amp {str(amp)} --device {device} --seed {str(seed)} " \
                    f"--batch-size {str(batch_size)} --epochs {str(epochs)} --lr {str(lr)} --min-lr {str(min_lr)}"
@@ -156,13 +155,36 @@ def _start_simulation(seed: int):
 
 
 def main():
+    global min_fit_clients, min_eval_clients
     print("Preparazione Training Federato in modalità Batch")
-    for current_seed in range(number_of_seeds):
-        print(f"Batch Federato con seed: [{current_seed} / {number_of_seeds}]")
-        _prepare_dataset(current_seed)
-        _start_simulation(current_seed)
-        # Wait a bit before starting the next simulation so that everything has time to close
-        time.sleep(10)
+    for ds_idx, dataset_name in enumerate(dataset_names):
+        print(f"Dataset [{ds_idx}/{len(dataset_names)}]: {dataset_name}")
+        for csm_idx, clients_sampling_method in enumerate(clients_sampling_methods):
+            print(f"Clients_Sampling_Method [{csm_idx}/{len(clients_sampling_methods)}]: "
+                  f"{clients_sampling_method}")
+            for csp_idx, clients_sampling_percentage in enumerate(clients_sampling_percentages):
+                print(f"Clients_Sampling_Percentage [{csp_idx}/{len(clients_sampling_percentages)}]: "
+                      f"{clients_sampling_percentage}")
+                for c_idx, clients in enumerate(clients_list):
+                    print(f"N.Clients: [{c_idx}/{len(clients_list)}]: {clients}")
+                    minfitchanged, minevalchanged = False, False
+                    if min_fit_clients == -1:
+                        min_fit_clients = clients
+                        minfitchanged = True
+                    if min_eval_clients == -1:
+                        min_eval_clients = clients
+                        minevalchanged = True
+                    for current_seed in range(number_of_seeds):
+                        print(f"Batch Federato con seed: [{current_seed} / {number_of_seeds}]")
+                        _prepare_dataset(current_seed, dataset_name, clients)
+                        _start_simulation(current_seed, dataset_name, clients,
+                                          clients_sampling_method, clients_sampling_percentage)
+                        # Wait a bit before starting the next simulation so that everything has time to close
+                        time.sleep(60)
+                    if minfitchanged:
+                        min_fit_clients = -1
+                    if minevalchanged:
+                        min_eval_clients = -1
     print("Terminazione Training Federato in modalità Batch")
 
 

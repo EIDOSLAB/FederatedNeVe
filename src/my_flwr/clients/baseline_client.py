@@ -28,7 +28,7 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
             "client_id": self.client_id,
             "lr": self.optimizer.param_groups[0]["lr"],
         }
-        return self.get_parameters(config={}), len(self.train_loader), results_data
+        return self.get_parameters(config={}), len(self.train_loader.dataset), results_data
 
     def _evaluate_method(self, parameters, config) -> tuple[float, int, dict]:
         # Validate the model on the validation-set
@@ -48,15 +48,15 @@ class FederatedDefaultClient(AFederatedClient, fl.client.NumPyClient):
             # Validation
             "val_loss": float(val_loss),
             "val_accuracy_top1": float(val_acc_1),
-            "val_size": len(self.valid_loader),
+            "val_size": len(self.valid_loader.dataset),
             # Test
             "test_loss": float(test_loss),
             "test_accuracy_top1": float(test_acc_1),
-            "test_size": len(self.test_loader),
+            "test_size": len(self.test_loader.dataset),
             # Other info
             "client_id": self.client_id,
         }
-        return float(val_loss), len(self.valid_loader), results_data
+        return float(val_loss), len(self.valid_loader.dataset), results_data
 
     def _load(self):
         if not os.path.exists(self.disk_folder):
