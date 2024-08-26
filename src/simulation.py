@@ -46,6 +46,7 @@ neve_multiepoch_epochs = 2
 neve_only_last_layer = True
 neve_use_lr_scheduler = True
 neve_use_early_stop = False
+leaf_input_dim = 10
 
 
 def client_fn(cid: str):
@@ -69,12 +70,14 @@ def client_fn(cid: str):
                       neve_alpha=neve_alpha, neve_delta=neve_delta,
                       scheduler_name=scheduler_name, use_disk=use_disk,
                       neve_only_last_layer=neve_only_last_layer,
-                      disk_folder=disk_folder).to_client()
+                      disk_folder=disk_folder,
+                      leaf_input_dim=leaf_input_dim).to_client()
 
 
 def main(args):
     # TODO: this is a really bad way to do this, for now it is acceptable
     global dataset_name, use_groupnorm, groupnorm_channels, train_loaders, val_loaders, test_loader, aux_loaders
+    global leaf_input_dim
     global neve_active, neve_multiepoch, neve_multiepoch_epochs
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta, neve_use_early_stop
     global scheduler_name, use_disk, model_name, use_pretrain, device, neve_only_last_layer, neve_use_lr_scheduler
@@ -100,6 +103,7 @@ def main(args):
     neve_active = args.neve_active
     neve_multiepoch = args.neve_multiepoch
     neve_multiepoch_epochs = args.neve_multiepoch_epochs
+    leaf_input_dim = args.leaf_input_dim
 
     # Cleanup neve_disk_folder
     if os.path.exists(disk_folder):

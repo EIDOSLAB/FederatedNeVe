@@ -17,7 +17,7 @@ class FederatedNeVeMultiEpochClient(FederatedNeVeClient):
                  neve_use_lr_scheduler: bool = True, neve_use_early_stop: bool = False,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
                  neve_only_last_layer: bool = False, num_train_epochs: int = 1,
-                 use_disk: bool = False, disk_folder: str = "../fclients_data/"):
+                 use_disk: bool = False, disk_folder: str = "../fclients_data/", leaf_input_dim: int = 10):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                          aux_loader=aux_loader,
                          use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
@@ -30,7 +30,7 @@ class FederatedNeVeMultiEpochClient(FederatedNeVeClient):
                          neve_use_lr_scheduler=neve_use_lr_scheduler, neve_use_early_stop=neve_use_early_stop,
                          neve_momentum=neve_momentum, neve_epsilon=neve_epsilon, neve_alpha=neve_alpha,
                          neve_delta=neve_delta, neve_only_last_layer=neve_only_last_layer,
-                         use_disk=use_disk, disk_folder=disk_folder)
+                         use_disk=use_disk, disk_folder=disk_folder, leaf_input_dim=leaf_input_dim)
         self.num_train_epochs = num_train_epochs
 
     def _fit_method(self, parameters, config) -> tuple[list, int, dict]:

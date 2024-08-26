@@ -28,7 +28,8 @@ def main(args):
     model, num_classes = get_model(dataset=args.dataset_name, model_name=args.model_name, device=args.device,
                                    use_pretrain=args.use_pretrain,
                                    use_groupnorm=args.model_use_groupnorm,
-                                   groupnorm_channels=args.model_groupnorm_groups)
+                                   groupnorm_channels=args.model_groupnorm_groups,
+                                   leaf_input_dim=args.leaf_input_dim)
     optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
                               momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name,

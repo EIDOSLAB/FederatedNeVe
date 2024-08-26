@@ -21,7 +21,8 @@ class FederatedNeVeClient(FederatedDefaultClient):
                  scheduler_name: str = "neve", client_id: int = 0,
                  neve_use_lr_scheduler: bool = True, neve_use_early_stop: bool = False,
                  neve_momentum: float = 0.5, neve_epsilon: float = 0.001, neve_alpha: float = 0.5, neve_delta: int = 10,
-                 neve_only_last_layer: bool = False, use_disk: bool = False, disk_folder: str = "../fclients_data/"):
+                 neve_only_last_layer: bool = False, use_disk: bool = False, disk_folder: str = "../fclients_data/",
+                 leaf_input_dim: int = 10):
         super().__init__(train_loader=train_loader, valid_loader=valid_loader, test_loader=test_loader,
                          use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
                          use_pretrain=use_pretrain,
@@ -29,7 +30,7 @@ class FederatedNeVeClient(FederatedDefaultClient):
                          dataset_name=dataset_name, optimizer_name=optimizer_name,
                          lr=lr, min_lr=min_lr, momentum=momentum, weight_decay=weight_decay, amp=amp,
                          scheduler_name=scheduler_name, client_id=client_id,
-                         use_disk=use_disk, disk_folder=disk_folder)
+                         use_disk=use_disk, disk_folder=disk_folder, leaf_input_dim=leaf_input_dim)
 
         self.aux_loader = aux_loader
         self.is_neve_setupped: bool = False

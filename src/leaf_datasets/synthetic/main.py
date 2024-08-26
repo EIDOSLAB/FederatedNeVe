@@ -24,7 +24,7 @@ def main():
 
 
 def get_num_samples(num_tasks, min_num_samples=5, max_num_samples=10000):
-	num_samples = np.random.lognormal(3, 2, (num_tasks)).astype(int)
+	num_samples = np.random.lognormal(3, 2, num_tasks).astype(int)
 	num_samples = [min(s + min_num_samples, max_num_samples) for s in num_samples]
 	return num_samples
 

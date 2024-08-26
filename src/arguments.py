@@ -53,6 +53,8 @@ def _get_default_arguments(parser):
                         help="Dataset folder name.")
     parser.add_argument("--dataset-iid", type=int2bool, choices=[0, 1], default=True,
                         help="Use a IID split for the dataset")
+    parser.add_argument("--leaf-input-dim", type=int, default=10,
+                        help="Input dimension of certain leaf datasets (e.g. synthetic)")
     # NeVe
     parser = add_neve_arguments(parser)
     parser.add_argument("--scheduler-name", type=str, choices=["neve", "baseline", "neq"], default="baseline",

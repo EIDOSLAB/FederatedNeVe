@@ -53,7 +53,8 @@ def main(args):
                         neve_momentum=args.neve_momentum, neve_epsilon=args.neve_epsilon,
                         neve_alpha=args.neve_alpha, neve_delta=args.neve_delta,
                         neve_only_last_layer=args.neve_only_ll,
-                        client_id=args.current_client, scheduler_name=args.scheduler_name, use_disk=False)
+                        client_id=args.current_client, scheduler_name=args.scheduler_name, use_disk=False,
+                        leaf_input_dim=args.leaf_input_dim)
     fl.client.start_client(server_address=args.server_address, client=client.to_client())
 
 

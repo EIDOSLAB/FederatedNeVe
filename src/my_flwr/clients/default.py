@@ -20,13 +20,14 @@ class AFederatedClient(ABC):
                  lr: float = 0.1, min_lr: float = 0.00001, momentum: float = 0.9, weight_decay: float = 5e-4,
                  amp: bool = True,
                  scheduler_name: str = "baseline", client_id: int = 0,
-                 use_disk: bool = False, disk_folder: str = "../fclients_data/"):
+                 use_disk: bool = False, disk_folder: str = "../fclients_data/", leaf_input_dim: int = 10):
         self.device = device
         self.amp = amp
         self.epoch = 0
         self.model, self.num_classes = get_model(dataset=dataset_name, model_name=model_name, device=self.device,
                                                  use_pretrain=use_pretrain,
-                                                 use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels)
+                                                 use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
+                                                 leaf_input_dim=leaf_input_dim)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.test_loader = test_loader
