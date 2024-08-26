@@ -49,7 +49,8 @@ def _get_default_arguments(parser):
     parser.add_argument("--dataset-root", type=str, default="../datasets",
                         help="Dataset root folder.")
     parser.add_argument("--dataset-name", type=str, default="cifar10",
-                        choices=["emnist", "cifar10", "cifar100", "imagenet100"],
+                        choices=["emnist", "cifar10", "cifar100", "imagenet100", "leaf_celeba", "leaf_synthetic",
+                                 "leaf_femnist_byclass", "leaf_femnist_bywrite"],
                         help="Dataset folder name.")
     parser.add_argument("--dataset-iid", type=int2bool, choices=[0, 1], default=True,
                         help="Use a IID split for the dataset")
