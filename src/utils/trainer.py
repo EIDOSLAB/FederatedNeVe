@@ -47,10 +47,10 @@ def train_epoch(model: torch.nn.Module, data_loaders: dict, optimizer, scheduler
 
 def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp: bool = True,
         epoch: int = 0, run_type: str = "Train"):
-    acc = Accuracy((1, 5))
+    acc = Accuracy((1,))  # 5))
 
     accuracy_meter_1 = AverageMeter()
-    accuracy_meter_5 = AverageMeter()
+    # accuracy_meter_5 = AverageMeter()
     loss_meter = AverageMeter()
     batch_time = AverageMeter()
 
@@ -98,7 +98,7 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
 
         accuracy = acc(output, target)
         accuracy_meter_1.update(accuracy[0].item(), target.shape[0])
-        accuracy_meter_5.update(accuracy[1].item(), target.shape[0])
+        # accuracy_meter_5.update(accuracy[1].item(), target.shape[0])
         loss_meter.update(loss.item(), target.shape[0])
 
         batch_time.update(time.time() - t1)
@@ -121,7 +121,7 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
         "loss": loss_meter.avg,
         "accuracy": {
             "top1": accuracy_meter_1.avg / 100,
-            "top5": accuracy_meter_5.avg / 100
+            # "top5": accuracy_meter_5.avg / 100
         },
         "confusion_matrix": confusion_matrix,
         "labels_counter": labels_counter
