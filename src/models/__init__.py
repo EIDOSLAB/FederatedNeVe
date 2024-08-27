@@ -14,7 +14,7 @@ def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cu
             num_classes = 10
         case "cifar100":
             num_classes = 100
-        case "celeba":
+        case "leaf_celeba":
             num_classes = 2
         case _:
             raise Exception(f"Dataset '{dataset}' does not exist.")
