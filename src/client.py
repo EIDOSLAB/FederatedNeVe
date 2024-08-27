@@ -24,16 +24,14 @@ def main(args):
     # Load data
     train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
                                    aux_seed=args.current_client, generate_aux_set=args.neve_active)
-    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(args.dataset_root, args.dataset_name,
-                                                                       train, test, aux,
-                                                                       split_iid=args.dataset_iid,
-                                                                       num_clients=args.num_clients,
-                                                                       concentration=args.lda_concentration,
-                                                                       seed=args.seed,
-                                                                       batch_size=args.batch_size)
-    # Memory optimization
-    train_loader = train_loaders[args.current_client]
-    val_loader = val_loaders[args.current_client]
+    train_loader, val_loader, test_loader, aux_loader = prepare_data(args.dataset_root, args.dataset_name,
+                                                                     train, test, aux,
+                                                                     split_iid=args.dataset_iid,
+                                                                     num_clients=args.num_clients,
+                                                                     concentration=args.lda_concentration,
+                                                                     seed=args.seed,
+                                                                     batch_size=args.batch_size,
+                                                                     current_client=args.current_client)
 
     if args.scheduler_name == "neq":
         aux_loader = val_loader

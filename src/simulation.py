@@ -48,15 +48,29 @@ neve_use_lr_scheduler = True
 neve_use_early_stop = False
 leaf_input_dim = 10
 
+dataset_root = ""
+train = None
+test = None
+dataset_iid = True
+num_clients = 1
+lda_concentration = 0.1
+seed = 0
+batch_size = 8
+
 
 def client_fn(cid: str):
-    assert train_loaders and val_loaders and test_loader and aux_loaders
+    assert aux_loaders
     print("Created client with cid:", cid)
     # Load data from the client
-    train_loader = train_loaders[int(cid) % len(train_loaders)]
-    valid_loader = val_loaders[int(cid) % len(val_loaders)]
+    train_loader, val_loader, test_loader, _ = prepare_data(dataset_root, dataset_name,
+                                                            train, test, None,
+                                                            split_iid=dataset_iid,
+                                                            num_clients=num_clients,
+                                                            concentration=lda_concentration,
+                                                            seed=seed, batch_size=batch_size,
+                                                            current_client=int(cid))
     aux_loader = aux_loaders[int(cid) % len(aux_loaders)]
-    return get_client(train_loader, valid_loader, test_loader, aux_loader, dataset_name=dataset_name,
+    return get_client(train_loader, val_loader, test_loader, aux_loader, dataset_name=dataset_name,
                       use_groupnorm=use_groupnorm, groupnorm_channels=groupnorm_channels,
                       use_pretrain=use_pretrain,
                       client_id=int(cid), model_name=model_name, device=device,
@@ -82,6 +96,14 @@ def main(args):
     global neve_epsilon, neve_momentum, neve_alpha, neve_delta, neve_use_early_stop
     global scheduler_name, use_disk, model_name, use_pretrain, device, neve_only_last_layer, neve_use_lr_scheduler
     global base_lr, optimizer_name, momentum, weight_decay, amp
+    global dataset_root
+    global train
+    global test
+    global dataset_iid
+    global num_clients
+    global lda_concentration
+    global seed
+    global batch_size
     neve_epsilon = args.neve_epsilon
     neve_momentum = args.neve_momentum
     neve_alpha = args.neve_alpha
@@ -104,21 +126,22 @@ def main(args):
     neve_multiepoch = args.neve_multiepoch
     neve_multiepoch_epochs = args.neve_multiepoch_epochs
     leaf_input_dim = args.leaf_input_dim
-
+    dataset_root = args.dataset_root
+    train = args.train
+    test = args.test
+    dataset_iid = args.dataset_iid
+    num_clients = args.num_clients
+    lda_concentration = args.lda_concentration
+    seed = args.seed
+    batch_size = args.batch_size
     # Cleanup neve_disk_folder
     if os.path.exists(disk_folder):
         shutil.rmtree(disk_folder)
     # Init seeds
     set_seeds(args.seed)
     # Initialize global model and data
-    train, test, _ = get_dataset(args.dataset_root, args.dataset_name,
-                                 aux_seed=args.seed, generate_aux_set=False)
-    train_loaders, val_loaders, test_loader, _ = prepare_data(args.dataset_root, args.dataset_name,
-                                                              train, test, None,
-                                                              split_iid=args.dataset_iid,
-                                                              num_clients=args.num_clients,
-                                                              concentration=args.lda_concentration,
-                                                              seed=args.seed, batch_size=args.batch_size)
+    train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
+                                   aux_seed=args.seed, generate_aux_set=False)
     # Generate aux loaders
     aux_loaders = [load_aux_dataset(shape=(3, 24, 24), aux_seed=idx, batch_size=args.batch_size)
                    for idx in range(args.num_clients)]
