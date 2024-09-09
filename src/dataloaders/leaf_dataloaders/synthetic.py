@@ -25,11 +25,7 @@ class SyntheticDataset(Dataset):
         self.data = list(zip(all_x_values, all_y_values))
 
     def __getitem__(self, index: int):
-        if torch.is_tensor(index):
-            index = index.item()
-
         data, label = self.data[index]
-
         return data, torch.tensor(label, dtype=torch.long)
 
     def __len__(self):

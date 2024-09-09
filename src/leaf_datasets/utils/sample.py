@@ -11,7 +11,6 @@ import json
 import os
 import random
 import time
-
 from collections import OrderedDict
 
 from constants import DATASETS, SEED_FILES
@@ -20,30 +19,30 @@ from util import iid_divide
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--name',
-                help='name of dataset to parse; default: sent140;',
-                type=str,
-                choices=DATASETS,
-                default='sent140')
+                    help='name of dataset to parse; default: sent140;',
+                    type=str,
+                    choices=DATASETS,
+                    default='sent140')
 parser.add_argument('--iid',
-                help='sample iid;',
-                action="store_true")
+                    help='sample iid;',
+                    action="store_true")
 parser.add_argument('--niid',
-                help="sample niid;",
-                dest='iid', action='store_false')
+                    help="sample niid;",
+                    dest='iid', action='store_false')
 parser.add_argument('--fraction',
-                help='fraction of all data to sample; default: 0.1;',
-                type=float,
-                default=0.1)
+                    help='fraction of all data to sample; default: 0.1;',
+                    type=float,
+                    default=0.1)
 parser.add_argument('--u',
-                help=('number of users in iid data set; ignored in niid case;'
-                      'represented as fraction of original total number of users; '
-                      'default: 0.01;'),
-                type=float,
-                default=0.01)
+                    help=('number of users in iid data set; ignored in niid case;'
+                          'represented as fraction of original total number of users; '
+                          'default: 0.01;'),
+                    type=float,
+                    default=0.01)
 parser.add_argument('--seed',
-                help='seed for random sampling of data',
-                type=int,
-                default=None)
+                    help='seed for random sampling of data',
+                    type=int,
+                    default=None)
 parser.set_defaults(iid=False)
 
 args = parser.parse_args()
@@ -58,20 +57,20 @@ files = os.listdir(subdir)
 files = [f for f in files if f.endswith('.json')]
 
 rng_seed = (args.seed if (args.seed is not None and args.seed >= 0) else int(time.time()))
-print ("Using seed {}".format(rng_seed))
+print("Using seed {}".format(rng_seed))
 rng = random.Random(rng_seed)
-print (os.environ.get('LEAF_DATA_META_DIR'))
+print(os.environ.get('LEAF_DATA_META_DIR'))
 if os.environ.get('LEAF_DATA_META_DIR') is not None:
     seed_fname = os.path.join(os.environ.get('LEAF_DATA_META_DIR'), SEED_FILES['sampling'])
     with open(seed_fname, 'w+') as f:
         f.write("# sampling_seed used by sampling script - supply as "
                 "--smplseed to preprocess.sh or --seed to utils/sample.py\n")
         f.write(str(rng_seed))
-    print ("- random seed written out to {file}".format(file=seed_fname))
+    print("- random seed written out to {file}".format(file=seed_fname))
 else:
-    print ("- using random seed '{seed}' for sampling".format(seed=rng_seed))
+    print("- using random seed '{seed}' for sampling".format(seed=rng_seed))
 
-new_user_count = 0 # for iid case
+new_user_count = 0  # for iid case
 for f in files:
     file_dir = os.path.join(subdir, f)
     with open(file_dir, 'r') as inf:
@@ -86,12 +85,12 @@ for f in files:
 
     hierarchies = None
 
-    if(args.iid):
+    if (args.iid):
         raw_list = list(data['user_data'].values())
         raw_x = [elem['x'] for elem in raw_list]
         raw_y = [elem['y'] for elem in raw_list]
-        x_list = [item for sublist in raw_x for item in sublist] # flatten raw_x
-        y_list = [item for sublist in raw_y for item in sublist] # flatten raw_y
+        x_list = [item for sublist in raw_x for item in sublist]  # flatten raw_x
+        y_list = [item for sublist in raw_y for item in sublist]  # flatten raw_y
 
         num_new_users = int(round(args.u * num_users))
         if num_new_users == 0:
@@ -99,7 +98,7 @@ for f in files:
 
         indices = [i for i in range(tot_num_samples)]
         new_indices = rng.sample(indices, num_new_samples)
-        users = [str(i+new_user_count) for i in range(num_new_users)]
+        users = [str(i + new_user_count) for i in range(num_new_users)]
 
         user_data = {}
         for user in users:
@@ -111,7 +110,7 @@ for f in files:
         for i in range(num_new_users):
             user_data[users[i]]['x'] = x_groups[i]
             user_data[users[i]]['y'] = y_groups[i]
-        
+
         num_samples = [len(user_data[u]['y']) for u in users]
 
         new_user_count += num_new_users
@@ -134,7 +133,7 @@ for f in files:
         if 'hierarchies' in data:
             hierarchies = []
 
-        while(ctot_num_samples < num_new_samples):
+        while (ctot_num_samples < num_new_samples):
             hierarchy = None
             if users_and_hiers is not None:
                 user, hier = users_and_hiers[user_i]
@@ -155,7 +154,7 @@ for f in files:
                     x.append(data['user_data'][user]['x'][i])
                     y.append(data['user_data'][user]['y'][i])
                 cdata = {'x': x, 'y': y}
-            
+
             if 'hierarchies' in data:
                 hierarchies.append(hier)
 
@@ -181,7 +180,7 @@ for f in files:
     all_data['user_data'] = user_data
 
     slabel = ''
-    if(args.iid):
+    if (args.iid):
         slabel = 'iid'
     else:
         slabel = 'niid'
@@ -191,7 +190,7 @@ for f in files:
     arg_nu = str(args.u)
     arg_nu = arg_nu[2:]
     arg_label = arg_frac
-    if(args.iid):
+    if (args.iid):
         arg_label = '%s_%s' % (arg_nu, arg_label)
     file_name = '%s_%s_%s.json' % ((f[:-5]), slabel, arg_label)
     ouf_dir = os.path.join(data_dir, 'sampled_data', file_name)

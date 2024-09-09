@@ -16,6 +16,9 @@ def get_dataset(ds_root: str, ds_name: str,
             train, test = get_cifar_100(ds_root)
         case "emnist":
             train, test = get_emnist(ds_root)
+        case "leaf_femnist_bywriter" | "leaf_femnist_byclass":
+            sample_shape = (3, 28, 28)
+            train, test = get_leaf_dataset(ds_root, ds_name)
         case "leaf_celeba":
             sample_shape = (3, 84, 84)
             train, test = get_leaf_dataset(ds_root, ds_name)

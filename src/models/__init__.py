@@ -1,7 +1,7 @@
 import torch.nn as nn
 
-from src.models.leaf_models import get_leaf_model
 from src.models.federated_model import get_resnet_model, get_efficientnet_model
+from src.models.leaf_models import get_leaf_model
 
 
 def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cuda",
@@ -16,6 +16,8 @@ def get_model(dataset="cifar10", model_name: str = "resnet18", device: str = "cu
             num_classes = 100
         case "leaf_celeba":
             num_classes = 2
+        case "leaf_femnist":
+            num_classes = 62
         case _:
             raise Exception(f"Dataset '{dataset}' does not exist.")
     if "efficientnet" in model_name.lower():

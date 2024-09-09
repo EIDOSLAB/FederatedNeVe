@@ -1,4 +1,5 @@
 import json
+
 import numpy as np
 
 # Carica i dati JSON da un file

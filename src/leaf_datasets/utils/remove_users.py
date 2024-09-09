@@ -1,4 +1,3 @@
-
 '''
 removes users with less than the given number of samples
 '''
@@ -12,15 +11,15 @@ from constants import DATASETS
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--name',
-                help='name of dataset to parse; default: sent140;',
-                type=str,
-                choices=DATASETS,
-                default='sent140')
+                    help='name of dataset to parse; default: sent140;',
+                    type=str,
+                    choices=DATASETS,
+                    default='sent140')
 
 parser.add_argument('--min_samples',
-                help='users with less than x samples are discarded; default: 10;',
-                type=int,
-                default=10)
+                    help='users with less than x samples are discarded; default: 10;',
+                    type=int,
+                    default=10)
 
 args = parser.parse_args()
 
@@ -75,4 +74,3 @@ for f in files:
     print('writing %s' % file_name)
     with open(ouf_dir, 'w') as outfile:
         json.dump(all_data, outfile)
-

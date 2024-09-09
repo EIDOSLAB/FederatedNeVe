@@ -33,7 +33,7 @@ scheduler = "baseline"
 
 # Data params
 dataset_root = "../datasets"
-dataset_names = ["leaf_celeba"]
+dataset_names = ["leaf_femnist_byclass"]
 dataset_iid = 0
 lda_concentration = 0.1
 

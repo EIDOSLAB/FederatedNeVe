@@ -1,7 +1,7 @@
 # -----
 # Torch -> CHECK DOCKERFILE
-#torch==2.3.0+cu118
-#torchvision==0.18+cu118
+torch==2.3.0+cu118
+torchvision==0.18+cu118
 # -----
 
 flwr[simulation]==1.9.0
@@ -9,3 +9,8 @@ wandb==0.17.4
 pandas==2.2.2
 numpy==1.26.4
 matplotlib==3.9.0
+pyarrow~=17.0.0
+fastparquet~=2024.5.0
+huggingface_hub~=0.24.6
+Pillow~=9.3.0
+scipy~=1.13.0
