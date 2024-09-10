@@ -88,7 +88,6 @@ class CifarResNet(nn.Module):
         Args:
           depth: number of layers.
           num_classes: number of classes
-          base_width: base width
         """
         super(CifarResNet, self).__init__()
 

@@ -16,11 +16,13 @@ if str(ROOT) not in sys.path:
 # ----- ----- ----- ----- -----
 from src.dataloaders import get_dataset, prepare_data
 
+python_command = "python"
+
 # Basic params
 amp = 1
 device = "cuda"
 batch_size = 100
-epochs = 250
+epochs = 100
 lr = 0.001
 min_lr = 0.00001
 
@@ -34,7 +36,7 @@ scheduler = "baseline"
 # Data params
 dataset_root = "../datasets"
 dataset_names = ["leaf_femnist_byclass"]
-dataset_iid = 0
+dataset_iid = 1
 lda_concentration = 0.1
 
 # NeVe params
@@ -50,13 +52,13 @@ neve_delta = 10  # LR patience. Default 10
 server_address = "127.0.0.1:6789"
 
 # Clients params
-clients_list = [10, 20, 50, 100]
+clients_list = [10]
 min_fit_clients = -1
 min_eval_clients = -1
 
 # Clients sampling params
-clients_sampling_methods = ["percentage_random", "velocity"]  # percentage_random percentage_groups velocity
-clients_sampling_percentages = [0.1, 0.3, 0.5]
+clients_sampling_methods = ["velocity"]  # percentage_random percentage_groups velocity
+clients_sampling_percentages = [0.5]
 clients_sampling_velocity_aging = 0.1
 clients_sampling_highest_velocity = 1
 clients_sampling_wait_epochs = 5
@@ -64,7 +66,7 @@ clients_sampling_min_epochs = 1
 clients_sampling_use_probability = 1
 
 # Simulation params
-number_of_seeds = 3
+number_of_seeds = 1
 num_gpus = 1
 
 
@@ -124,7 +126,7 @@ def _start_simulation(seed: int, dataset_name: str, num_clients: int,
         wandb_tags += f" NEVE-MULTIEPOCHS_{str(neve_multiepoch_train_epochs)}"
 
     # Start the server
-    server_command = f"python server.py {common_params} {wandb_tags}"
+    server_command = f"{python_command} server.py {common_params} {wandb_tags}"
     print(f"Avvio del server: {server_command}")
     server_process = subprocess.Popen(server_command, shell=True)
     # Wait some time so that the server can start
@@ -135,11 +137,10 @@ def _start_simulation(seed: int, dataset_name: str, num_clients: int,
     for i in range(num_clients):
         # Assign one client for each gpu
         gpu_id = 0 if i % num_gpus == 0 else i % num_gpus
-
         if platform.system() == 'Linux':
-            client_command = f"CUDA_VISIBLE_DEVICES={gpu_id} python client.py {common_params} --current-client {i}"
+            client_command = f"CUDA_VISIBLE_DEVICES={gpu_id} {python_command} client.py {common_params} --current-client {i}"
         else:
-            client_command = f"python client.py {common_params} --current-client {i}"
+            client_command = f"{python_command} client.py {common_params} --current-client {i}"
 
         print(f"Avvio del client {i}: {client_command}, sulla GPU: {gpu_id}")
         client_process = subprocess.Popen(client_command, shell=True)

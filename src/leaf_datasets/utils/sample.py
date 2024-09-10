@@ -1,10 +1,10 @@
-'''
+"""
 samples from all raw data;
-by default samples in a non-iid manner; namely, randomly selects users from 
-raw data until their cumulative amount of data exceeds the given number of 
+by default samples in a non-iid manner; namely, randomly selects users from
+raw data until their cumulative amount of data exceeds the given number of
 datapoints to sample (specified by --fraction argument);
 ordering of original data points is not preserved in sampled data
-'''
+"""
 
 import argparse
 import json
@@ -85,7 +85,7 @@ for f in files:
 
     hierarchies = None
 
-    if (args.iid):
+    if args.iid:
         raw_list = list(data['user_data'].values())
         raw_x = [elem['x'] for elem in raw_list]
         raw_y = [elem['y'] for elem in raw_list]
@@ -133,7 +133,7 @@ for f in files:
         if 'hierarchies' in data:
             hierarchies = []
 
-        while (ctot_num_samples < num_new_samples):
+        while ctot_num_samples < num_new_samples:
             hierarchy = None
             if users_and_hiers is not None:
                 user, hier = users_and_hiers[user_i]
@@ -144,7 +144,7 @@ for f in files:
 
             cnum_samples = len(data['user_data'][user]['y'])
 
-            if (ctot_num_samples + cnum_samples > num_new_samples):
+            if ctot_num_samples + cnum_samples > num_new_samples:
                 cnum_samples = num_new_samples - ctot_num_samples
                 indices = [i for i in range(cnum_samples)]
                 new_indices = rng.sample(indices, cnum_samples)
@@ -172,15 +172,14 @@ for f in files:
     # ------------
     # create .json file
 
-    all_data = {}
-    all_data['users'] = users
+    all_data = {'users': users}
     if hierarchies is not None:
         all_data['hierarchies'] = hierarchies
     all_data['num_samples'] = num_samples
     all_data['user_data'] = user_data
 
     slabel = ''
-    if (args.iid):
+    if args.iid:
         slabel = 'iid'
     else:
         slabel = 'niid'
@@ -190,7 +189,7 @@ for f in files:
     arg_nu = str(args.u)
     arg_nu = arg_nu[2:]
     arg_label = arg_frac
-    if (args.iid):
+    if args.iid:
         arg_label = '%s_%s' % (arg_nu, arg_label)
     file_name = '%s_%s_%s.json' % ((f[:-5]), slabel, arg_label)
     ouf_dir = os.path.join(data_dir, 'sampled_data', file_name)

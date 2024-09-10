@@ -1,6 +1,6 @@
 from torchvision import transforms
 
-from dataloaders.leaf_dataloaders import FemnistDataset
+from dataloaders.leaf_dataloaders import FEmnistDataset
 
 
 def get_stats(dataset):
@@ -34,6 +34,6 @@ def get_stats(dataset):
 
 
 if __name__ == "__main__":
-    ds = FemnistDataset("../../../datasets/leaf/")
+    ds = FEmnistDataset("../../../datasets/leaf/")
     # mean, std:  (tensor([0.9627, 0.9627, 0.9627]), tensor([0.1550, 0.1550, 0.1550]))
     print("mean, std: ", get_stats(ds))

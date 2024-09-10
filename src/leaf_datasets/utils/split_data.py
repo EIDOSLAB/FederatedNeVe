@@ -1,6 +1,6 @@
-'''
+"""
 splits data into train and test sets
-'''
+"""
 
 import argparse
 import json
@@ -37,10 +37,7 @@ def create_jsons_for(user_files, which_set, max_users, include_hierarchy):
 
     if (user_count == max_users) or (i == len(user_files) - 1):
 
-        all_data = {}
-        all_data['users'] = users
-        all_data['num_samples'] = num_samples
-        all_data['user_data'] = user_data
+        all_data = {'users': users, 'num_samples': num_samples, 'user_data': user_data}
 
         data_i = f.find('data')
         num_i = data_i + 5
@@ -129,7 +126,7 @@ with open(file_dir, 'r') as inf:
     data = json.load(inf)
 include_hierarchy = 'hierarchies' in data
 
-if (args.user):
+if args.user:
     print('splitting data by user')
 
     # 1 pass through all the json files to instantiate arr
@@ -228,15 +225,9 @@ else:
 
         users = [data['users'][i] for i in user_indices]
 
-        all_data_train = {}
-        all_data_train['users'] = users
-        all_data_train['num_samples'] = num_samples_train
-        all_data_train['user_data'] = user_data_train
+        all_data_train = {'users': users, 'num_samples': num_samples_train, 'user_data': user_data_train}
 
-        all_data_test = {}
-        all_data_test['users'] = users
-        all_data_test['num_samples'] = num_samples_test
-        all_data_test['user_data'] = user_data_test
+        all_data_test = {'users': users, 'num_samples': num_samples_test, 'user_data': user_data_test}
         file_name_train = '%s_train_%s.json' % ((f[:-5]), arg_label)
         file_name_test = '%s_test_%s.json' % ((f[:-5]), arg_label)
         ouf_dir_train = os.path.join(dir, 'train', file_name_train)

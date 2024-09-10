@@ -7,9 +7,9 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 
-class FemnistDataset(Dataset):
+class FEmnistDataset(Dataset):
 
-    def __init__(self, leaf_ds_root: str, split_type: str = "by_writer"):
+    def __init__(self, leaf_ds_root: str, split_type: str = "writer"):
         femnist_file = os.path.join(leaf_ds_root, "femnist", "data.pkl")
         if os.path.exists(femnist_file):
             self.data = pd.read_pickle(femnist_file)
@@ -19,7 +19,7 @@ class FemnistDataset(Dataset):
             print("Saving femnist dataset into disk.")
             self.data.to_pickle(femnist_file)
             print("Done.")
-        if split_type == "by_writer":
+        if split_type == "writer":
             # (writer_id__string)
             self.column_split = "writer_id"
         else:
@@ -50,6 +50,6 @@ class FemnistDataset(Dataset):
 
 
 if __name__ == "__main__":
-    ds = FemnistDataset("../../../datasets/leaf/")
+    ds = FEmnistDataset("../../../datasets/leaf/")
     img, lbl = ds.__getitem__(0)
     print(ds)

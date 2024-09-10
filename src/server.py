@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 
 import flwr as fl
-import wandb
 from flwr.server.strategy import FedAvg
+
+import wandb
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parent

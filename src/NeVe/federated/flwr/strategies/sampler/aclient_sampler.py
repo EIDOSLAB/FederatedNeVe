@@ -12,7 +12,7 @@ class ClientSampler(ABC):
     def __init__(self, logger: ClientSamplerLogger, max_epochs: int = 250):
         self._clients_mapping: dict[str, int] = {}
         self._logger: ClientSamplerLogger = logger
-        self.max_epochs = 250
+        self.max_epochs = max_epochs
 
     def sample_fit_clients(self, client_manager: ClientManager, epoch: int,
                            sample_config_fz=None) -> list[ClientProxy]:

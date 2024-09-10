@@ -44,6 +44,8 @@ def get_scheduler(model: nn.Module, optimizer: torch.optim.Optimizer, scheduler_
     match dataset.lower():
         case "emnist":
             milestones = [30, 60]
+        case "leaf_femnist_byclass" | "leaf_femnist_bywriter":
+            milestones = [30, 60]
         case _:
             milestones = [100, 150]
     baseline_scheduler = MultiStepLR(optimizer, milestones=milestones)
