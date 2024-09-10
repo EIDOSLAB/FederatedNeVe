@@ -8,13 +8,14 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
     cids = [m["client_id"] for _, m in metrics]
     if method_type == "fit":
         # Multiply accuracy of each client by number of examples used
-        accuracies_top1 = [num_examples * m["accuracy_top1"] for num_examples, m in metrics]
+        sum_accuracies_top1 = [num_examples * m["accuracy_top1"] for num_examples, m in metrics]
+        accuracies_top1 = [m["accuracy_top1"] for num_examples, m in metrics]
         losses = [num_examples * m["loss"] for num_examples, m in metrics]
         examples = [num_examples for num_examples, _ in metrics]
         lrs = [m["lr"] for _, m in metrics]
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
-            "accuracy_top1": sum(accuracies_top1) / sum(examples),
+            "accuracy_top1": sum(sum_accuracies_top1) / sum(examples),
             "loss": sum(losses) / sum(examples),
             "lr": {},
             "clients": {
@@ -38,18 +39,20 @@ def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fi
                 aggregate_data["neve_optimizer"][str(client_id)] = neve_data
     else:
         # Multiply accuracy of each client by number of examples used
-        val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
+        sum_val_accuracies_top1 = [m["val_size"] * m["val_accuracy_top1"] for _, m in metrics]
+        val_accuracies_top1 = [m["val_accuracy_top1"] for _, m in metrics]
         val_losses = [m["val_size"] * m["val_loss"] for _, m in metrics]
         val_examples = [m["val_size"] for _, m in metrics]
-        test_accuracies_top1 = [m["test_size"] * m["test_accuracy_top1"] for _, m in metrics]
+        sum_test_accuracies_top1 = [m["test_size"] * m["test_accuracy_top1"] for _, m in metrics]
+        test_accuracies_top1 = [m["test_accuracy_top1"] for _, m in metrics]
         test_losses = [m["test_size"] * m["test_loss"] for _, m in metrics]
         test_examples = [m["test_size"] for _, m in metrics]
 
         # Aggregate and return custom metric (weighted average)
         aggregate_data = {
-            "val_accuracy_top1": sum(val_accuracies_top1) / sum(val_examples),
+            "val_accuracy_top1": sum(sum_val_accuracies_top1) / sum(val_examples),
             "val_loss": sum(val_losses) / sum(val_examples),
-            "test_accuracy_top1": sum(test_accuracies_top1) / sum(test_examples),
+            "test_accuracy_top1": sum(sum_test_accuracies_top1) / sum(test_examples),
             "test_loss": sum(test_losses) / sum(test_examples),
             "clients": {
                 cid: {"val_accuracy_top1": val_acc_t1, "test_accuracy_top1": test_acc_t1}

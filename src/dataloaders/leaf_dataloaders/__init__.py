@@ -9,7 +9,7 @@ from src.dataloaders.leaf_dataloaders.femnist import FEmnistDataset
 from src.dataloaders.leaf_dataloaders.synthetic import SyntheticDataset, SyntheticTransformedDataset
 from src.dataloaders.leaf_dataloaders.transformed import LeafTransformedDataset
 
-transforms = {
+DATA_TRANSFORMS = {
     "femnist": {
         "mean": (0.9627, 0.9627, 0.9627),
         "std": (0.1550, 0.1550, 0.1550),
@@ -88,8 +88,8 @@ def get_femnist(leaf_ds_root: str, seed: int = 0, train_size: float = 0.7, split
     femnist_dataset = FEmnistDataset(leaf_ds_root, split_type)
     train_ds, test_ds = split_dataset(femnist_dataset, seed, train_size=train_size)
     # Applicare le trasformazioni ai subset
-    train_ds = LeafTransformedDataset(train_ds, transforms["femnist"]["transforms"][0])
-    test_ds = LeafTransformedDataset(test_ds, transforms["femnist"]["transforms"][1])
+    train_ds = LeafTransformedDataset(train_ds, DATA_TRANSFORMS["femnist"]["transforms"][0])
+    test_ds = LeafTransformedDataset(test_ds, DATA_TRANSFORMS["femnist"]["transforms"][1])
     return train_ds, test_ds
 
 
@@ -97,8 +97,8 @@ def get_celeba(leaf_ds_root: str, seed: int = 0, train_size: float = 0.7):
     celeba_dataset = CelebaDataset(leaf_ds_root)
     train_ds, test_ds = split_dataset(celeba_dataset, seed, train_size=train_size)
     # Applicare le trasformazioni ai subset
-    train_ds = LeafTransformedDataset(train_ds, transforms["celeba"]["transforms"][0])
-    test_ds = LeafTransformedDataset(test_ds, transforms["celeba"]["transforms"][1])
+    train_ds = LeafTransformedDataset(train_ds, DATA_TRANSFORMS["celeba"]["transforms"][0])
+    test_ds = LeafTransformedDataset(test_ds, DATA_TRANSFORMS["celeba"]["transforms"][1])
     return train_ds, test_ds
 
 
@@ -106,8 +106,8 @@ def get_synthetic(leaf_ds_root: str, seed: int = 0, train_size: float = 0.7):
     synthetic_dataset = SyntheticDataset(leaf_ds_root)
     train_ds, test_ds = split_dataset(synthetic_dataset, seed, train_size=train_size)
     # Applicare le trasformazioni ai subset
-    train_ds = SyntheticTransformedDataset(train_ds, transforms["synthetic"]["transforms"][0])
-    test_ds = SyntheticTransformedDataset(test_ds, transforms["synthetic"]["transforms"][1])
+    train_ds = SyntheticTransformedDataset(train_ds, DATA_TRANSFORMS["synthetic"]["transforms"][0])
+    test_ds = SyntheticTransformedDataset(test_ds, DATA_TRANSFORMS["synthetic"]["transforms"][1])
     return train_ds, test_ds
 
 

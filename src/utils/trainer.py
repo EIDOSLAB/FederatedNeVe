@@ -1,6 +1,5 @@
 import datetime
 import time
-from collections import Counter
 
 import torch
 
@@ -65,8 +64,8 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
     # Define the loss function
     loss_fn = torch.nn.functional.cross_entropy
 
-    confusion_matrix = None
-    labels_counter = None
+    # confusion_matrix = None
+    # labels_counter = None
 
     for batch, (images, target) in enumerate(dataloader):
         images, target = images.to(device, non_blocking=True), target.to(device, non_blocking=True)
@@ -82,19 +81,19 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
             optimizer.zero_grad()
 
         # Init confusion matrix and labels counter
-        if confusion_matrix is None:
-            confusion_matrix = torch.zeros(output.size(1), output.size(1), dtype=torch.int64, device=device)
+        # if confusion_matrix is None:
+        #    confusion_matrix = torch.zeros(output.size(1), output.size(1), dtype=torch.int64, device=device)
 
-        if labels_counter is None:
-            labels_counter = Counter({label: 0 for label in range(output.size(1))})
+        # if labels_counter is None:
+        #    labels_counter = Counter({label: 0 for label in range(output.size(1))})
 
         # Update labels counter
-        labels_counter.update(target.cpu().numpy())
+        # labels_counter.update(target.cpu().numpy())
         # Update confusion matrix
         _, preds = torch.max(output, 1)
         # Aggiorna la matrice di confusione
-        for t, p in zip(target.view(-1), preds.view(-1)):
-            confusion_matrix[t.long(), p.long()] += 1
+        # for t, p in zip(target.view(-1), preds.view(-1)):
+        #    confusion_matrix[t.long(), p.long()] += 1
 
         accuracy = acc(output, target)
         accuracy_meter_1.update(accuracy[0].item(), target.shape[0])
@@ -113,9 +112,9 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
               f"Cumulative Loss {loss_meter.avg:.3f}\t")
 
     # Normalize confusion matrix
-    confusion_matrix = confusion_matrix.cpu().numpy().astype(float)
-    row_sums = confusion_matrix.sum(axis=1, keepdims=True)
-    confusion_matrix = confusion_matrix / row_sums
+    # confusion_matrix = confusion_matrix.cpu().numpy().astype(float)
+    # row_sums = confusion_matrix.sum(axis=1, keepdims=True)
+    # confusion_matrix = confusion_matrix / row_sums
 
     return {
         "loss": loss_meter.avg,
@@ -123,6 +122,6 @@ def run(model: torch.nn.Module, dataloader, optimizer, scaler, device: str, amp:
             "top1": accuracy_meter_1.avg / 100,
             # "top5": accuracy_meter_5.avg / 100
         },
-        "confusion_matrix": confusion_matrix,
-        "labels_counter": labels_counter
+        # "confusion_matrix": confusion_matrix,
+        # "labels_counter": labels_counter
     }

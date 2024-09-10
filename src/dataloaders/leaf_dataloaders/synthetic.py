@@ -1,8 +1,10 @@
 import json
 import os
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
+from torchvision import transforms as t
 
 
 class SyntheticDataset(Dataset):
@@ -26,6 +28,7 @@ class SyntheticDataset(Dataset):
 
     def __getitem__(self, index: int):
         data, label = self.data[index]
+        data = np.expand_dims(np.array(data), axis=0)  # Make the list a 1-d image
         return data, torch.tensor(label, dtype=torch.long)
 
     def __len__(self):
@@ -46,3 +49,16 @@ class SyntheticTransformedDataset(Dataset):
         if self.transforms:
             image = self.transforms(image)
         return image, label
+
+
+if __name__ == "__main__":
+    ds = SyntheticDataset("../../../datasets/leaf/")
+    item = ds.__getitem__(0)
+    syn_transforms = t.Compose([
+        t.ToTensor(),
+        t.Normalize(0.7518, 1.4211)
+    ])
+    ds2 = SyntheticTransformedDataset(ds, transforms=syn_transforms)
+    item2 = ds2.__getitem__(0)
+    print("Item no transforms:", item)
+    print("Item with transforms:", item2)
