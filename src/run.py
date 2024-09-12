@@ -35,7 +35,7 @@ scheduler = "baseline"
 
 # Data params
 dataset_root = "../datasets"
-dataset_names = ["leaf_femnist_byclass"]
+dataset_names = ["leaf_femnist_bywriter"]
 dataset_iid = 1
 lda_concentration = 0.1
 
@@ -57,7 +57,7 @@ min_fit_clients = -1
 min_eval_clients = -1
 
 # Clients sampling params
-clients_sampling_methods = ["velocity"]  # percentage_random percentage_groups velocity
+clients_sampling_methods = ["percentage_random", "velocity"]  # percentage_random percentage_groups velocity
 clients_sampling_percentages = [0.5]
 clients_sampling_velocity_aging = 0.1
 clients_sampling_highest_velocity = 1
@@ -66,7 +66,7 @@ clients_sampling_min_epochs = 1
 clients_sampling_use_probability = 1
 
 # Simulation params
-number_of_seeds = 1
+number_of_seeds = 3
 num_gpus = 1
 
 

@@ -1,5 +1,6 @@
 import os.path
 
+import numpy as np
 import torch
 from torch.utils.data import random_split
 from torchvision import transforms
@@ -85,9 +86,53 @@ def get_leaf_dataset(root: str, dataset_name: str, seed: int = 0, train_size: fl
     return train, test
 
 
+def split_by_writer(leaf_ds_root: str, dataset: FEmnistDataset, seed: int = 0, train_size: float = 0.7):
+    # Take the writers
+    writers = dataset.get_unique_writers()
+    # Split the writers in 2 sets
+    np.random.seed(seed)
+    # Mescola casualmente i writers
+    np.random.shuffle(writers)
+    # Calcola il numero di writers per il training e il test
+    num_train = int(len(writers) * train_size)
+
+    # Divide i writers mescolati in due liste basandosi su train_size
+    train_writers = writers[:num_train]  # Training set
+    test_writers = writers[num_train:]  # Test set
+
+    # Get data relative to the training and testing writers
+    train_data = dataset.get_partition_by_filter(train_writers)
+    test_data = dataset.get_partition_by_filter(test_writers)
+    # Create datasets from this data
+    train_ds = FEmnistDataset(leaf_ds_root, "writer", late_init=True)
+    train_ds.late_init(train_data)
+    test_ds = FEmnistDataset(leaf_ds_root, "writer", late_init=True)
+    test_ds.late_init(test_data)
+    return train_ds, test_ds
+
+
+def get_femnist_writer_partitions(leaf_ds_root, t_ds: LeafTransformedDataset, task="train"):
+    dataset: FEmnistDataset = t_ds.original_dataset
+    partitions = []
+    writers = dataset.get_unique_writers()
+    for writer in writers:
+        partition_data = dataset.get_partition_by_filter(writer)
+        partition_ds = FEmnistDataset(leaf_ds_root, "writer", late_init=True)
+        partition_ds.late_init(partition_data)
+        if task.lower() == "train":
+            partition = LeafTransformedDataset(partition_ds, DATA_TRANSFORMS["femnist"]["transforms"][0])
+        else:
+            partition = LeafTransformedDataset(partition_ds, DATA_TRANSFORMS["femnist"]["transforms"][1])
+        partitions.append(partition)
+    return partitions
+
+
 def get_femnist(leaf_ds_root: str, seed: int = 0, train_size: float = 0.7, split_type: str = "writer"):
     femnist_dataset = FEmnistDataset(leaf_ds_root, split_type)
-    train_ds, test_ds = split_dataset(femnist_dataset, seed, train_size=train_size)
+    if split_type == "writer":
+        train_ds, test_ds = split_by_writer(leaf_ds_root, femnist_dataset, seed, train_size=train_size)
+    else:
+        train_ds, test_ds = split_dataset(femnist_dataset, seed, train_size=train_size)
     # Applicare le trasformazioni ai subset
     train_ds = LeafTransformedDataset(train_ds, DATA_TRANSFORMS["femnist"]["transforms"][0])
     test_ds = LeafTransformedDataset(test_ds, DATA_TRANSFORMS["femnist"]["transforms"][1])

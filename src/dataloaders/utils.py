@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 
+from src.dataloaders.leaf_dataloaders import get_femnist_writer_partitions
 from src.dataloaders.flwr_fedavgm_common import create_lda_partitions
 from src.dataloaders.random_dataset import RandomDataset
 
@@ -65,27 +66,42 @@ def split_data_iid(train_set: Dataset, test_set: Dataset, val_percentage: int = 
 def split_data_not_iid(ds_root: str, ds_name: str,
                        train_set: Dataset, test_set: Dataset, val_percentage: float = 10, num_clients: int = 1,
                        concentration: float = 0.5, seed: int = 42, batch_size: int = 32, current_client: int = 0):
-    non_iid_path = os.path.join(ds_root, "non_iid", ds_name, f"seed_{str(seed)}", f"beta_{str(concentration)}")
+    if "bywriter" in ds_name:
+        non_iid_path = os.path.join(ds_root, "non_iid", ds_name)
+    else:
+        non_iid_path = os.path.join(ds_root, "non_iid", ds_name, f"seed_{str(seed)}", f"beta_{str(concentration)}")
     # If data is not in disk, we create the partitions and save them into disk
     if not os.path.exists(non_iid_path):
         print("Preparing non-IID partitions...")
-        # SPLIT DATA INTO TRAIN AND TEST SET
-        len_val = len(train_set) // val_percentage  # 10 % validation set
-        len_train = len(train_set) - len_val
-        lengths = [len_train, len_val]
-        ds_train, ds_val = random_split(train_set, lengths, torch.Generator().manual_seed(seed))
+        if "bywriter" in ds_name:
+            ds_partitions = get_femnist_writer_partitions(os.path.join(ds_root, "leaf"), train_set, task="train")
+            train_partitions, val_partitions = [], []
+            for ds_partition in ds_partitions:
+                # SPLIT DATA INTO TRAIN AND TEST SET
+                len_val = len(ds_partition) // val_percentage  # 10 % validation set
+                len_train = len(ds_partition) - len_val
+                lengths = [len_train, len_val]
+                ds_train, ds_val = random_split(ds_partition, lengths, torch.Generator().manual_seed(seed))
+                train_partitions.append(ds_train)
+                val_partitions.append(ds_val)
+        else:
+            # SPLIT DATA INTO TRAIN AND TEST SET
+            len_val = len(train_set) // val_percentage  # 10 % validation set
+            len_train = len(train_set) - len_val
+            lengths = [len_train, len_val]
+            ds_train, ds_val = random_split(train_set, lengths, torch.Generator().manual_seed(seed))
 
-        # TRAIN DATA MANAGEMENT
-        # Transform data to numpy so that we can use the create_lda_partitions method
-        train_partitions, train_distribution = _create_lda_partitions(ds_train, dirichlet_dist=None,
-                                                                      num_partitions=num_clients,
-                                                                      concentration=concentration,
-                                                                      seed=seed, batch_size=batch_size)
-        # VALIDATION DATA MANAGEMENT
-        # Transform data to numpy so that we can use the create_lda_partitions method
-        val_partitions, _ = _create_lda_partitions(ds_val, dirichlet_dist=train_distribution,
-                                                   num_partitions=num_clients, concentration=concentration,
-                                                   seed=seed, batch_size=batch_size)
+            # TRAIN DATA MANAGEMENT
+            # Transform data to numpy so that we can use the create_lda_partitions method
+            train_partitions, train_distribution = _create_lda_partitions(ds_train, dirichlet_dist=None,
+                                                                          num_partitions=num_clients,
+                                                                          concentration=concentration,
+                                                                          seed=seed, batch_size=batch_size)
+            # VALIDATION DATA MANAGEMENT
+            # Transform data to numpy so that we can use the create_lda_partitions method
+            val_partitions, _ = _create_lda_partitions(ds_val, dirichlet_dist=train_distribution,
+                                                       num_partitions=num_clients, concentration=concentration,
+                                                       seed=seed, batch_size=batch_size)
         os.makedirs(non_iid_path, exist_ok=True)
         for partition_idx, (train_partition, val_partition) in enumerate(zip(train_partitions, val_partitions)):
             _save_lda_partition(non_iid_path, partition_idx, train_partition, val_partition)
