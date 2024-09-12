@@ -11,6 +11,7 @@ class FEmnistDataset(Dataset):
 
     def __init__(self, leaf_ds_root: str, split_type: str = "writer"):
         femnist_file = os.path.join(leaf_ds_root, "femnist", "data.pkl")
+        os.makedirs(os.path.join(leaf_ds_root, "femnist"), exist_ok=True)
         if os.path.exists(femnist_file):
             self.data = pd.read_pickle(femnist_file)
         else:

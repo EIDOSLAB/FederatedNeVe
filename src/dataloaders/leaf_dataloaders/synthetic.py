@@ -10,6 +10,7 @@ from torchvision import transforms as t
 class SyntheticDataset(Dataset):
 
     def __init__(self, leaf_ds_root: str):
+        os.makedirs(os.path.join(leaf_ds_root, "synthetic"), exist_ok=True)
         # Load dataset
         with open(os.path.join(leaf_ds_root, "synthetic", "data.json"), 'r') as f:
             data = json.load(f)

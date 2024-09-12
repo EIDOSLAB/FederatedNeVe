@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 class CelebaDataset(Dataset):
 
     def __init__(self, leaf_ds_root: str):
+        os.makedirs(os.path.join(leaf_ds_root, "celeba"), exist_ok=True)
         self.data = pd.read_csv(os.path.join(leaf_ds_root, "celeba", "labels.txt"))
         self.images_dir = os.path.join(leaf_ds_root, "celeba", "images")
 

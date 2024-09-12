@@ -70,6 +70,7 @@ DATA_TRANSFORMS = {
 
 def get_leaf_dataset(root: str, dataset_name: str, seed: int = 0, train_size: float = 0.7):
     leaf_root = os.path.join(root, "leaf")
+    os.makedirs(leaf_root, exist_ok=True)
     match dataset_name:
         case "leaf_femnist_bywriter":
             train, test = get_femnist(leaf_root, seed, train_size=train_size, split_type="writer")
