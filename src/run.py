@@ -159,15 +159,15 @@ def main():
     global min_fit_clients, min_eval_clients
     print("Preparazione Training Federato in modalità Batch")
     for ds_idx, dataset_name in enumerate(dataset_names):
-        print(f"Dataset [{ds_idx}/{len(dataset_names)}]: {dataset_name}")
+        print(f"Dataset [{ds_idx + 1}/{len(dataset_names)}]: {dataset_name}")
         for csm_idx, clients_sampling_method in enumerate(clients_sampling_methods):
-            print(f"Clients_Sampling_Method [{csm_idx}/{len(clients_sampling_methods)}]: "
+            print(f"Clients_Sampling_Method [{csm_idx + 1}/{len(clients_sampling_methods)}]: "
                   f"{clients_sampling_method}")
             for csp_idx, clients_sampling_percentage in enumerate(clients_sampling_percentages):
-                print(f"Clients_Sampling_Percentage [{csp_idx}/{len(clients_sampling_percentages)}]: "
+                print(f"Clients_Sampling_Percentage [{csp_idx + 1}/{len(clients_sampling_percentages)}]: "
                       f"{clients_sampling_percentage}")
                 for c_idx, clients in enumerate(clients_list):
-                    print(f"N.Clients: [{c_idx}/{len(clients_list)}]: {clients}")
+                    print(f"N.Clients: [{c_idx + 1}/{len(clients_list)}]: {clients}")
                     minfitchanged, minevalchanged = False, False
                     if min_fit_clients == -1:
                         min_fit_clients = clients
@@ -176,7 +176,7 @@ def main():
                         min_eval_clients = clients
                         minevalchanged = True
                     for current_seed in range(number_of_seeds):
-                        print(f"Batch Federato con seed: [{current_seed} / {number_of_seeds}]")
+                        print(f"Batch Federato con seed: [{current_seed + 1} / {number_of_seeds}]")
                         _prepare_dataset(current_seed, dataset_name, clients)
                         _start_simulation(current_seed, dataset_name, clients,
                                           clients_sampling_method, clients_sampling_percentage)

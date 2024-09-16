@@ -43,7 +43,7 @@ def main(args):
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,
-            min_available_clients=args.num_clients,
+            min_available_clients=min(args.num_clients, args.min_fit_clients, args.min_evaluate_clients),
             evaluate_metrics_aggregation_fn=weighted_average_eval
         )
     else:
@@ -51,7 +51,7 @@ def main(args):
             fit_metrics_aggregation_fn=weighted_average_fit,
             min_fit_clients=args.min_fit_clients,
             min_evaluate_clients=args.min_evaluate_clients,
-            min_available_clients=args.num_clients,
+            min_available_clients=min(args.num_clients, args.min_fit_clients, args.min_evaluate_clients),
             evaluate_metrics_aggregation_fn=weighted_average_eval
         )
 
