@@ -3,7 +3,6 @@ class NeVeData:
         self._data = {
             "neve": {},
             "velocity": {},
-            "neurons_velocity": {},
             "continue_training": True
         }
 
@@ -26,9 +25,7 @@ class NeVeData:
         return None
 
     def add_velocity(self, k, velocity):
-        global_velocity, neurons_velocity = velocity
-        self._data["velocity"][f"{k}"] = global_velocity
-        self._data["neurons_velocity"][f"{k}"] = neurons_velocity
+        self._data["velocity"][f"{k}"] = velocity
 
     def update_velocities(self, mse_data: dict, stop_threshold: float):
         for key in ["model_metric", "model_metric_avg", "model_metric_mse", "layers_metric_mse"]:

@@ -68,7 +68,7 @@ class NeVeScheduler(object):
             # Log velocities histogram
             data.add_velocity(k, velocity)
             # Save this epoch velocities for the next iteration
-            neve_new_metrics.append(velocity[0])
+            neve_new_metrics.append(velocity)
             self._hooks[k].reset()
 
         # Evaluate the velocities mse

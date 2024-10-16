@@ -8,8 +8,8 @@ from NeVe.federated.flwr.strategies.sampler.velocity_sampler import VelocitySamp
 
 def get_client_sampler(sampling_method: str, sampling_percentage: float = 0.5, sampling_wait_epochs: int = 10,
                        sampling_velocity_aging: float = 0.01, sampling_highest_velocity: bool = True,
-                       sampling_min_epochs: int = 2, sampling_use_probability: bool = True, max_epochs: int = 250) \
-        -> ClientSampler:
+                       sampling_min_epochs: int = 2, sampling_use_probability: bool = True,
+                       max_epochs: int = 250) -> ClientSampler:
     logger = ClientSamplerLogger()
     match (sampling_method.lower()):
         case "default":

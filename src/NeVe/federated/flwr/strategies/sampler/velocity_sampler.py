@@ -16,7 +16,7 @@ class VelocitySampler(PercentageRandomSampler):
         super().__init__(logger, clients_sampling_percentage=clients_sampling_percentage,
                          sampling_wait_epochs=sampling_wait_epochs)
         self.clients_velocity: dict[int, float] = {}
-        self.sampling_velocity_aging: float = sampling_velocity_aging
+        self.sampling_velocity_aging: float = abs(sampling_velocity_aging)
         self.sampling_highest_velocity: bool = sampling_highest_velocity
         # If we select the lowest velocity we also need to reduce the velocity when aging is performed
         if not self.sampling_highest_velocity:
