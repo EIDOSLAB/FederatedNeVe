@@ -1,100 +1,108 @@
-# ----- ----- ----- ----- -----
-# TODO: FIX SRC IMPORTS IN A BETTER WAY
-import sys
-from pathlib import Path
-
-import torch
-
 import wandb
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
-# ----- ----- ----- ----- -----
-
-from src.arguments import get_args
-from src.dataloaders import get_dataset, prepare_data
-from src.models import get_model
-from src.utils import set_seeds, get_optimizer, get_scheduler
-from src.utils.trainer import train_epoch, run
-from src.NeVe.scheduler import NeVeScheduler
-from src.NEq.scheduler import NEqScheduler
+from my_federated.datasets.dataloader.loader import prepare_data, load_aux_dataset, load_transform
+from my_federated.my_flwr.clients import get_simulation_client
+from my_federated.utils import set_seeds
+from my_federated.utils.arguments import get_args
 
 
 def main(args):
     # Init seeds
     set_seeds(args.seed)
 
-    model, num_classes = get_model(dataset=args.dataset_name, model_name=args.model_name, device=args.device,
-                                   use_pretrain=args.use_pretrain,
+    train_distributions, num_classes, ds_task = prepare_data(args.dataset_root, args.dataset_name,
+                                                             num_clients=args.num_clients,
+                                                             seed=args.seed,
+                                                             split_iid=args.dataset_iid,
+                                                             concentration=args.lda_concentration,
+                                                             medmnist_size=args.medmnist_size,
+                                                             generate_distribution=True)
+
+    aux_loader_transform = load_transform(args.dataset_name, args.model_name, aux_transform=True)
+    if "chestmnist" in args.dataset_name:
+        aux_loaders = [load_aux_dataset(shape=(3, 32, 32), aux_seed=args.seed, number_samples=10,
+                                        batch_size=args.batch_size, transform=aux_loader_transform,
+                                        labels_size=num_classes)]
+    else:
+        aux_loaders = [load_aux_dataset(shape=(3, 32, 32), aux_seed=args.seed, number_samples=10,
+                                        batch_size=args.batch_size, transform=aux_loader_transform,
+                                        labels_size=1)]
+
+    client = get_simulation_client(args.dataset_root, args.dataset_name, aux_loader=aux_loaders[0],
+                                   dataset_iid=args.dataset_iid, num_clients=args.num_clients,
+                                   lda_concentration=args.lda_concentration,
+                                   seed=args.seed, batch_size=args.batch_size,
                                    use_groupnorm=args.model_use_groupnorm,
                                    groupnorm_channels=args.model_groupnorm_groups,
-                                   leaf_input_dim=args.leaf_input_dim)
-    optimizer = get_optimizer(model, opt_name=args.optimizer, starting_lr=args.lr,
-                              momentum=args.momentum, weight_decay=args.weight_decay)
-    scheduler = get_scheduler(model, optimizer=optimizer, scheduler_name=args.scheduler_name, dataset=args.dataset_name,
-                              neve_only_last_layer=args.neve_only_ll)
-    scaler = torch.cuda.amp.GradScaler(enabled=(args.device == "cuda" and args.amp))
+                                   use_pretrain=args.use_pretrain,
+                                   client_id=int(0), model_name=args.model_name, device=args.device, lr=args.lr,
+                                   optimizer_name=args.optimizer, scheduler_name=args.scheduler,
+                                   momentum=args.momentum, weight_decay=args.weight_decay, amp=args.amp,
+                                   neve_momentum=args.neve_momentum,
+                                   neve_only_last_layer=args.neve_only_ll,
+                                   medmnist_size=args.medmnist_size,
+                                   strategy_name=args.strategy_name,
+                                   dataset_task=ds_task)
 
-    # Load Data
-    train, test, aux = get_dataset(args.dataset_root, args.dataset_name,
-                                   aux_seed=args.seed,
-                                   generate_aux_set=args.args.neve_active)
-
-    train_loaders, val_loaders, test_loader, aux_loader = prepare_data(args.dataset_root, args.dataset_name,
-                                                                       train, test, aux,
-                                                                       split_iid=args.dataset_iid,
-                                                                       num_clients=args.num_clients,
-                                                                       concentration=args.lda_concentration,
-                                                                       seed=args.seed,
-                                                                       batch_size=args.batch_size)
-    train_loader, val_loader = train_loaders[0], val_loaders[0]
-
-    if args.scheduler_name == "neq":
-        aux_loader = val_loader
-
-    data_loaders = {
-        "train": train_loader,
-        "val": val_loader,
-        "test": test_loader,
-        "aux": aux_loader,
-    }
     # Init seeds
     set_seeds(args.seed)  # Just to be sure to be in the same spot whatever we generated the aux dataset or not
 
     # Init wandb project
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
-    # NeVe init
-    if "aux" in data_loaders.keys() and data_loaders["aux"] and \
-            ((args.scheduler_name == "neve" and isinstance(scheduler, NeVeScheduler)) or
-             (args.scheduler_name == "neq" and isinstance(scheduler, NEqScheduler))):
-        with scheduler:
-            _ = run(model, data_loaders["aux"], None, scaler, args.device, args.amp, -1, "Aux")
-        _ = scheduler.step(init_step=True)
-
     # Training cycle
+    model_parameters = client.get_parameters({})
     for epoch in range(0, args.epochs):
-        logs, neve_data, neq_data = train_epoch(model, data_loaders, optimizer=optimizer, scheduler=scheduler,
-                                                grad_scaler=scaler, device=args.device, amp=args.amp, epoch=epoch)
+        model_parameters, _, train_results = client.fit(model_parameters, {})
+        _, _, eval_results = client.evaluate(model_parameters, {})
+        print()
+        wandb_logs = {
+            "train": {
+                "accuracy": {
+                    "top1": train_results["train_accuracy_top1"],
+                },
+                # "balanced_accuracy": {
+                #    "top1": train_results["balanced_accuracy_top1"],
+                # },
+                # "auc": train_results["auc"],
+                "loss": train_results["train_loss"]
+            },
+            "val": {
+                "accuracy": {
+                    "top1": eval_results["val_accuracy_top1"],
+                },
+                # "balanced_accuracy": {
+                #    "top1": eval_results["val_balanced_accuracy_top1"],
+                # },
+                # "auc": eval_results["val_auc"],
+                "loss": eval_results["val_loss"],
+            },
+            "test": {
+                "accuracy": {
+                    "top1": eval_results["test_accuracy_top1"],
+                },
+                # "balanced_accuracy": {
+                #    "top1": eval_results["test_balanced_accuracy_top1"],
+                # },
+                # "auc": eval_results["test_auc"],
+                "loss": eval_results["test_loss"],
+            },
+            "lr": {
+                "0": train_results["lr"]
+            },
+            "aux": {key: val for key, val in train_results.items() if key.startswith('neve.')},
+        }
         print("\n-----")
         print(f"Epoch [{epoch + 1}]/[{args.epochs}]:")
-        print(f"LR: {logs['lr']}")
-        print(f"Train: {logs['train']}")
-        print(f"Val: {logs['val']}")
-        print(f"Test: {logs['test']}")
-        if args.scheduler_name == "neve" and 'aux' in logs.keys():
-            print(f"NeVe - Aux: avg.vel. {logs['aux']['neve']['model_avg_value']} ")
-        if neq_data:
-            print(f"NEq - Frozen neurons percentual: {neq_data}")
+        print(f"LR: {wandb_logs['lr']}")
+        print(f"Train: {wandb_logs['train']}")
+        print(f"Val: {wandb_logs['val']}")
+        print(f"Test: {wandb_logs['test']}")
+        print(f"NeVe - Aux: avg.vel. {wandb_logs['aux']} ")
         print("-----\n")
-        if neve_data and not neve_data.continue_training:
-            # TODO: ADD BREAK CONDITION
-            print("Training stopped since neve velocity dropped below the threshold.")
 
         # Log on wandb project
-        wandb.log(logs)
+        wandb.log(wandb_logs)
 
     # Save model...
 

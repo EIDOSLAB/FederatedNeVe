@@ -258,3 +258,12 @@ fabric.properties
 # Pytorch tensor
 *.pt
 *.pth
+
+*/images/
+*/sweeps/
+*/fclients_data/
+*/paper_plots/
+*.pdf
+*.jpg
+*.jpeg
+*.png
