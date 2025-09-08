@@ -1,4 +1,4 @@
-# 🧠 [FLEdge-AI 2025] FedNeVe: Efficient Federated Model Aggregation through Neural Velocity
+# 🧠 [MobiCom FLEdge-AI 2025] FedNeVe: Efficient Federated Model Aggregation through Neural Velocity
 
 [![Docker Ready](https://img.shields.io/badge/docker-ready-blue?logo=docker)](https://www.docker.com/)
 [![GPU Support](https://img.shields.io/badge/GPU-Supported-green?logo=nvidia)](https://developer.nvidia.com/cuda-zone)
@@ -10,12 +10,12 @@
 This repository contains the official implementation of the paper:
 > **Efficient Federated Model Aggregation through Neural Velocity**  
 > *Gianluca Dalmasso, et al.*  
-> MobiCom FLEDGE-AI Workshop 2025  
+> [MobiCom FLEDGE-AI Workshop 2025](https://www.sigmobile.org/mobicom/2025/)  
 > 📄 [[arXiv link](https://arxiv.org/abs/xxxx.xxxxx)]
 
 ---
 
-![Teaser](assets/teaser.png)
+![Teaser](images/teaser.jpg)
 
 ---
 
