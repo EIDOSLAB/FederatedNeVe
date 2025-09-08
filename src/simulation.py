@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-# Verifica il sistema operativo
+# Check for the os
 if sys.platform.startswith('win'):
     import msvcrt
 else:
@@ -27,28 +27,29 @@ aux_loaders = []
 
 def get_client_id(cid_file_path: str = "client_id.txt", num_clients: int = 10):
     cid = 0
-    # Apri il file in modalità lettura/scrittura
+    # Open the file in read/write mode
     with open(cid_file_path, "r+") as f:
-        # Ottieni il lock sul file (dipende dal sistema operativo)
+        # Acquire the lock on the file (depends on the operating system)
         if sys.platform.startswith('win'):  # Windows
-            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 0)  # Lock esclusivo
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 0)  # Exclusive lock
         else:  # Linux/macOS
-            fcntl.flock(f, fcntl.LOCK_EX)  # LOCK_EX per un lock esclusivo
-        # Se il file esiste, leggi il valore e incrementalo
+            fcntl.flock(f, fcntl.LOCK_EX)  # LOCK_EX for an exclusive lock
+        # If the file exists, read the value and increment it
         if os.path.exists(cid_file_path):
-            f.seek(0)  # Posiziona il cursore all'inizio del file
-            contenuto = f.read().strip()
-            cid = int(contenuto) + 1
+            f.seek(0)  # Move the cursor to the beginning of the file
+            content = f.read().strip()
+            cid = int(content) + 1
 
-        # Assicurati che cid sia all'interno del range [0, num_clients)
+        # Ensure that cid is within the range [0, num_clients)
         cid = cid % num_clients
 
-        # Posiziona di nuovo il cursore all'inizio per scrivere il nuovo valore
+        # Move the cursor back to the beginning to write the new value
         f.seek(0)
-        f.truncate()  # Rimuove il contenuto precedente
-        f.write(str(cid))  # Scrivi il nuovo valore
+        f.truncate()  # Remove the previous content
+        f.write(str(cid))  # Write the new value
 
     return cid
+
 
 
 def get_client_fn(dataset_root, dataset_name, dataset_iid, num_clients, lda_concentration, seed, batch_size,
@@ -122,8 +123,6 @@ def main(args):
     print("Performing training on:", device)
 
     # Init wandb project
-    if args.wandb_project_name == "NeVe-Federated-Strategy":
-        args.wandb_project_name = "NeVe-Federated-Strategy-Simulation"
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, config=args, tags=args.wandb_tags)
 
     if args.print_clients_distribution and train_distributions:

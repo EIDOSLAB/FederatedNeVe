@@ -38,7 +38,7 @@ def _get_default_arguments(parser):
                         help="If not IID data is used, this parameter is used to control the lda partitioning."
                              "Higher value generates uniform partitions, lower value generates imbalanced partitions."
                              "Es: 0.0 Generates one class per client, +inf generates uniform partitions over classes.")
-    parser.add_argument("--epochs", type=int, default=250,
+    parser.add_argument("--epochs", type=int, default=100,
                         help="Number of training epochs.")
     parser.add_argument("--lr", type=float, default=0.001,
                         help="Optimizer starting learning rate.")
@@ -68,13 +68,11 @@ def _get_default_arguments(parser):
                         help="Size of medmnist dataset samples. Default 224.")
     parser.add_argument("--dataset-iid", type=int2bool, choices=[0, 1], default=True,
                         help="Use a IID split for the dataset")
-    parser.add_argument("--dataset-size", type=float, default=1.0,
-                        help="Size of training dataset in percentage. Default: 1.0, Range: (0.0, 1.0].")
     # NeVe
     parser = add_neve_arguments(parser)
 
     # Wandb
-    parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated-Strategy-Simulation")
+    parser.add_argument("--wandb-project-name", type=str, default="NeVe-Federated-ClientSelection")
     parser.add_argument("--wandb-run-name", type=str, default=None)
     parser.add_argument("--wandb-tags", type=str, default=[], nargs="+",
                         help="Tags associated to the wandb run")

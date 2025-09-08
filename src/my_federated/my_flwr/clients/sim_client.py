@@ -20,7 +20,7 @@ class SimulationNeVeClient(fl.client.NumPyClient):
                  use_pretrain: bool = False, inner_epochs: int = 1,
                  lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4,
                  amp: bool = True, client_id: int = 0, model_name: str = "resnet18", device: str = "cuda",
-                 neve_momentum: float = 0.5, neve_only_last_layer: bool = False,
+                 neve_momentum: float = 0.5, neve_only_last_layer: bool = False, velocity_stop_threshold: float = 1e-3, max_idle_epochs: int = -1,
                  dataset_iid: bool = True, num_clients: int = 10, lda_concentration: float = 0.1, seed: int = 42,
                  batch_size: int = 32, medmnist_size: int = 224, strategy_name: str = "fedavg", data_distribution=None,
                  val_percentage: int = 10, dataset_task: str = "multi-class", pin_data_in_memory: bool = False):
@@ -54,6 +54,8 @@ class SimulationNeVeClient(fl.client.NumPyClient):
         self.pin_data_in_memory = pin_data_in_memory
         self.train_loader = None
         self.valid_loader = None
+        self.previous_velocity = float("inf")
+        self.velocity_stop_threshold = velocity_stop_threshold
 
         self.dataset_fed_path = get_dataset_fed_path(self.dataset_root, self.dataset_name,
                                                      medmnist_size=self.medmnist_size, seed=self.seed,
@@ -66,6 +68,8 @@ class SimulationNeVeClient(fl.client.NumPyClient):
             self.inner_epochs = 1
         self.neve_momentum = neve_momentum
         self.neve_only_last_layer = neve_only_last_layer
+        self.idle_epochs = 0
+        self.max_idle_epochs = max_idle_epochs
 
     def get_parameters(self, config):
         model, self.num_classes = get_model(dataset=self.dataset_name, model_name=self.model_name,
@@ -133,6 +137,21 @@ class SimulationNeVeClient(fl.client.NumPyClient):
         return model, optimizer, scaler, neve_scheduler, loaders
 
     def fit(self, parameters, config):
+        print(f"Client: {self.client_id} - Fit")
+        perform_training = not self.previous_velocity < self.velocity_stop_threshold
+        # Se non mi addestro, incremento di uno il numero di epoche in cui son stato idle
+        if not perform_training:
+            self.idle_epochs += 1
+        # Se son stato idle più di N epoche, allora forzo il risveglio (se N è diverso da -1, in tal caso non posso risvegliarmi)
+        if self.max_idle_epochs != -1 and self.idle_epochs > self.max_idle_epochs:
+            perform_training = True
+            self.idle_epochs = 0
+
+        fit_logs = {
+            "performed_training": perform_training
+        }
+        if not perform_training:
+            return [], 0, fit_logs
         config["partitions_2_load"] = ["train"]
         model, optimizer, scaler, neve_scheduler, loaders = self.set_parameters(parameters, config)
         train_loader = loaders.get("train", None)
@@ -150,7 +169,6 @@ class SimulationNeVeClient(fl.client.NumPyClient):
         _ = neve_scheduler.step(init_step=True)
 
         # Perform default fit step
-        fit_logs = {}
         for epoch in range(self.inner_epochs):
             training_stats = train_model(model, train_loader, self.dataset_task, optimizer, scaler,
                                          self.device, self.amp, epoch=self.epoch)
@@ -160,6 +178,7 @@ class SimulationNeVeClient(fl.client.NumPyClient):
 
             # Return stats in a structured way
             fit_logs = {
+                "performed_training": True,
                 "loss": float(loss),
                 "accuracy_top1": float(accuracy_1),
                 "size": len(train_loader.dataset),
@@ -173,20 +192,23 @@ class SimulationNeVeClient(fl.client.NumPyClient):
                            epoch=self.epoch, run_type="Aux")
         # Step the NeVe scheduler and get velocity information
         velocity_data = neve_scheduler.step()
-        #for key, value in velocity_data.as_dict["neve"].items():
+        # for key, value in velocity_data.as_dict["neve"].items():
         #    if isinstance(value, dict):
         #        continue
         #    fit_logs[f"neve.{key}"] = value.item()
         fit_logs["neve.velocity"] = velocity_data.velocity  # fit_logs["neve.model_avg_value"]
-        print(f"Client: {self.client_id} - Model Avg. Velocity: {fit_logs['neve.velocity']}")
-        #for key, value in velocity_data.velocity_hist["velocity"].items():
+        self.previous_velocity = velocity_data.velocity
+        print(f"Model Velocity: {fit_logs['neve.velocity']}")
+        # for key, value in velocity_data.velocity_hist["velocity"].items():
         #    for idx, val in enumerate(value):
         #        fit_logs[f"neve.velocity_histogram.{key}.{idx}"] = float(val)
         fit_logs["neve.client"] = self.client_id
+        print()
         #
         return self._get_model_parameters(model), len(train_loader.dataset), fit_logs
 
     def evaluate(self, parameters, config):
+        print(f"Client: {self.client_id} - Evaluate")
         config["partitions_2_load"] = ["validation"]
         model, optimizer, scaler, neve_scheduler, loaders = self.set_parameters(parameters, config)
         valid_loader = loaders.get("validation")
@@ -206,5 +228,6 @@ class SimulationNeVeClient(fl.client.NumPyClient):
             # Other info
             "client_id": self.client_id,
         }
+        print()
         #
         return float(val_loss), len(valid_loader.dataset), eval_logs

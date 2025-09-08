@@ -12,6 +12,7 @@ def get_simulation_client(dataset_root: str, dataset_name: str = "cifar10", aux_
                           lr: float = 0.1, momentum: float = 0.9, weight_decay: float = 5e-4,
                           amp: bool = True, client_id: int = 0, model_name: str = "resnet18", device: str = "cuda",
                           neve_momentum: float = 0.5, neve_only_last_layer: bool = False,
+                          velocity_stop_threshold: float = 1e-3, max_idle_epochs: int = -1,
                           medmnist_size: int = 224, strategy_name: str = "fedavg",
                           data_distribution=None, val_percentage: int = 10, dataset_task: str = "multi-class",
                           pin_data_in_memory: bool = False):
@@ -20,7 +21,7 @@ def get_simulation_client(dataset_root: str, dataset_name: str = "cifar10", aux_
                                 use_pretrain, inner_epochs,
                                 lr, momentum, weight_decay,
                                 amp, client_id, model_name, device,
-                                neve_momentum, neve_only_last_layer,
+                                neve_momentum, neve_only_last_layer, velocity_stop_threshold, max_idle_epochs,
                                 dataset_iid, num_clients, lda_concentration, seed,
                                 batch_size, medmnist_size, strategy_name=strategy_name,
                                 data_distribution=data_distribution,

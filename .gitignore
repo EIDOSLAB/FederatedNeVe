@@ -251,19 +251,9 @@ fabric.properties
 
 
 # Datasets
-*datasets/
 *activations/
 *.json
 
 # Pytorch tensor
 *.pt
 *.pth
-
-*/images/
-*/sweeps/
-*/fclients_data/
-*/paper_plots/
-*.pdf
-*.jpg
-*.jpeg
-*.png

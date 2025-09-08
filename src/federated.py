@@ -4,9 +4,9 @@ from functools import reduce
 
 import numpy as np
 import torch
+import wandb
 from flwr.common import NDArrays
 
-import wandb
 from my_federated.datasets.dataloader.loader import prepare_data, load_aux_dataset, load_transform, \
     get_dataset_fed_path, load_partition, load_loader, delete_dataset
 from my_federated.models import get_model
@@ -19,20 +19,22 @@ from my_federated.utils.trainer import eval_model
 
 def weighted_avg(train_data: dict, key: str, size_key: str = 'size') -> float:
     """
-    Calcola la media pesata di un certo valore nei risultati di training da un dizionario.
+    Compute the weighted average of a given value in the training results from a dictionary.
 
     Args:
-        train_data (dict): Dizionario con chiavi client_id e valori come risultati di training.
-        key (str): La chiave dentro 'train_results' di cui calcolare la media pesata.
-        size_key (str): La chiave usata per i pesi (di solito 'size' o 'train_size').
+        train_data (dict): Dictionary with client_id as keys and training results as values.
+        key (str): The key inside 'train_results' for which to compute the weighted average.
+        size_key (str): The key used for weights (usually 'size' or 'train_size').
 
     Returns:
-        float: Media pesata del valore richiesto.
+        float: Weighted average of the requested value.
     """
     total_weight = 0
     weighted_sum = 0.0
 
     for client_id, entry in train_data.items():
+        if "results" not in entry:
+            continue
         result = entry['results']
         weight = result.get(size_key, 1)
         value = result.get(key, None)
@@ -109,8 +111,7 @@ def main(args, eps: float = 1e-9):
                                                                  medmnist_size=args.medmnist_size,
                                                                  val_percentage=args.val_percentage,
                                                                  strategy_name=args.strategy_name,
-                                                                 generate_distribution=True,
-                                                                 dataset_size=args.dataset_size)
+                                                                 generate_distribution=True)
         strategy_data.dataset_task = ds_task
 
         dataset_fed_path = get_dataset_fed_path(strategy_data.dataset_path, strategy_data.dataset,
@@ -180,6 +181,8 @@ def main(args, eps: float = 1e-9):
                                                        amp=args.amp,
                                                        neve_momentum=args.neve_momentum,
                                                        neve_only_last_layer=args.neve_only_ll,
+                                                       velocity_stop_threshold=args.neve_velocity_stop_threshold,
+                                                       max_idle_epochs=args.neve_max_idle_epochs,
                                                        medmnist_size=args.medmnist_size,
                                                        strategy_name=args.strategy_name,
                                                        dataset_task=ds_task,
@@ -189,44 +192,49 @@ def main(args, eps: float = 1e-9):
             models_parameters = {}
             train_data = {}
             eval_data = {}
+            server_parameters = test_client._get_model_parameters(test_model)
             for client_id in range(args.num_clients):
                 client = clients[client_id]
 
-                model_parameters, train_size, train_results = client.fit(test_client._get_model_parameters(test_model),
-                                                                         {"round": epoch})
-                eval_loss, eval_size, eval_results = client.evaluate(model_parameters, {"round": epoch})
-                models_parameters[client_id] = (model_parameters, train_size)
+                model_parameters, train_size, train_results = client.fit(server_parameters, {"round": epoch})
+                eval_loss, eval_size, eval_results = client.evaluate(server_parameters, {"round": epoch})
+
                 train_data[client_id] = {
-                    "train_size": train_size,
-                    "results": train_results,
+                    "performed_training": train_results.get("performed_training", False)
                 }
                 eval_data[client_id] = {
                     "eval_loss": eval_loss,
                     "eval_size": eval_size,
                     "results": eval_results,
                 }
+                if train_results.get("performed_training", False):
+                    models_parameters[client_id] = (model_parameters, train_size)
+                    train_data[client_id]["train_size"] = train_size
+                    train_data[client_id]["results"] = train_results
             # End clients cycle
 
+            if not models_parameters:
+                wandb.log({"neve_early_stop": epoch})
+                break
+            ##
+            ##
+            ##
             # Calculate the total number of examples used during training
             # By default we use the number of samples to define the scaling factor of a client
-            num_examples_total = sum(
-                client_training_data["train_size"] for _, client_training_data in train_data.items())
-            scaling_factors = [client_training_data["train_size"] / (num_examples_total + eps) for
-                               _, client_training_data
-                               in train_data.items()]
-            # If we use neve we use the velocity rather than the number of samples for the scaling factor of the clients
-            if strategy_data.strategy == "neve":
-                weights = [client_data["results"].get("neve.velocity", 0.0) for (_, client_data) in train_data.items()]
-                if args.neve_velocity_aggregation_fn == "soft_exp":
-                    weights = [weight / args.neve_softmax_temperature for weight in weights]
-                    scaling_factors = torch.nn.Softmin(dim=0)(torch.tensor(weights)).tolist()
-                else:
-                    velocity_total = sum(weights) + 1e-6
-                    scaling_factors = [weight / velocity_total for weight in weights]
+            scaling_factors = [client_training_data["train_size"]  for _, client_training_data
+                               in train_data.items() if "train_size" in client_training_data]
+            # Get total number of examples used in this training cycle
+            num_examples_total = sum(scaling_factors)
+            # Normalize scaling factors
+            scaling_factors = [scaling_factor / (num_examples_total + eps) for scaling_factor in scaling_factors]
+            #
             merged_parameters = aggregate([(val[0], val[1]) for _, val in models_parameters.items()],
                                           scaling_factors=scaling_factors)
+            #
             test_model = update_model_parameters(test_model, merged_parameters)
-
+            ##
+            ##
+            ##
             test_stats = eval_model(test_model, test_loader, ds_task, device, amp,
                                     epoch=epoch, run_type="Test")
             test_loss, test_acc_1 = test_stats["loss"], test_stats["accuracy"]["top1"]
@@ -270,8 +278,12 @@ def main(args, eps: float = 1e-9):
                 "aux": {},
             }
             for client_id, client_data in train_data.items():
-                wandb_logs["aux"][client_id] = {key: val for key, val in client_data["results"].items() if
-                                                key.startswith('neve.')}
+                if client_data.get("performed_training", False):
+                    wandb_logs["aux"][client_id] = {key: val for key, val in client_data.get("results", {}).items() if
+                                                    key.startswith('neve.')}
+                    wandb_logs["aux"][client_id]["performed_training"] = 1
+                else:
+                    wandb_logs["aux"][client_id] = {"performed_training": 0}
             #
             print("\n-----")
             print(f"Epoch [{epoch + 1}]/[{args.epochs}]:")

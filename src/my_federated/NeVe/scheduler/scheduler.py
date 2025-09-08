@@ -72,7 +72,6 @@ class NeVeScheduler(object):
         print(f"Memory footprint: {total_memory:.2f} Bytes")
         print(f"Memory footprint: {total_memory / 1024:.2f} KBytes")
         print(f"Memory footprint: {total_memory / (1024 ** 2):.5f} MBytes")
-        print()
 
     def step(self, init_step: bool = False) -> NeVeData | None:
         if init_step:

@@ -61,30 +61,18 @@ def main(args):
                 "accuracy": {
                     "top1": train_results["train_accuracy_top1"],
                 },
-                # "balanced_accuracy": {
-                #    "top1": train_results["balanced_accuracy_top1"],
-                # },
-                # "auc": train_results["auc"],
                 "loss": train_results["train_loss"]
             },
             "val": {
                 "accuracy": {
                     "top1": eval_results["val_accuracy_top1"],
                 },
-                # "balanced_accuracy": {
-                #    "top1": eval_results["val_balanced_accuracy_top1"],
-                # },
-                # "auc": eval_results["val_auc"],
                 "loss": eval_results["val_loss"],
             },
             "test": {
                 "accuracy": {
                     "top1": eval_results["test_accuracy_top1"],
                 },
-                # "balanced_accuracy": {
-                #    "top1": eval_results["test_balanced_accuracy_top1"],
-                # },
-                # "auc": eval_results["test_auc"],
                 "loss": eval_results["test_loss"],
             },
             "lr": {

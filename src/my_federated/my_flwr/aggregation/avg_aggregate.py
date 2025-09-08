@@ -4,7 +4,6 @@ import wandb
 from flwr.common import Metrics
 
 
-
 def _weighted_average(metrics: list[tuple[int, Metrics]], method_type: str = "fit") -> dict:
     assert method_type in ["fit", "eval"], f"_weighted_average 'method_type' must be 'fit' or 'eval', " \
                                            f"not '{method_type}'"
