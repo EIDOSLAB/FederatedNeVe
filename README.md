@@ -76,7 +76,7 @@ This will build the following Docker images:
 ```bash
 docker run --rm -it \
   --gpus all \                   # Optional: remove if no GPU
-  neve:python federated.py  # Optional: Optional parameters...
+  fedneve:python federated.py  # Optional: Optional parameters...
 ```
 > 💡 Note: you may need to adjust volume mounting (-v) depending on your OS and Docker setup.
 
